@@ -1,5 +1,5 @@
 /// Severity levels for log messages, ordered from least to most severe.
-enum LogLevel { trace, debug, info, warn, error }
+enum LogLevel { trace, debug, info, notice, warn, error }
 
 /// Abstract base class for all loggers.
 ///
@@ -79,6 +79,14 @@ abstract class Logger {
     final className = _className(target);
     if (!_filter(className)) return;
     write(LogLevel.info, className, message);
+  }
+
+  /// Logs a notice-level message for [target].
+  void notice(Object target, String message) {
+    if (!_enabled(LogLevel.notice)) return;
+    final className = _className(target);
+    if (!_filter(className)) return;
+    write(LogLevel.notice, className, message);
   }
 
   /// Logs a warn-level message for [target], with an optional [error] and [stackTrace].

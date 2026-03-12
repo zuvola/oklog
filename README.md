@@ -6,7 +6,7 @@ A simple yet capable logging utility for Dart and Flutter. Just log. ok.
 
 ## Features
 
-- Five log levels: `trace`, `debug`, `info`, `warn`, `error`
+- Six log levels: `trace`, `debug`, `info`, `notice`, `warn`, `error`
 - Colored, emoji-decorated console output via `ConsoleLogger`
 - Filter logs by class name using `allowList` and `denyList`
 - Silent no-op logging via `DummyLogger`
@@ -40,6 +40,7 @@ void main() {
   log.trace('main', 'Trace message');
   log.debug('main', 'Debug message');
   log.info('main', 'Info message');
+  log.notice('main', 'Notice message');
   log.warn('main', 'Warning message');
 
   try {
@@ -90,10 +91,11 @@ log.level = LogLevel.warn; // only warn and error are printed
 
 ## Log levels
 
-| Level   | Description                        |
-|---------|------------------------------------|
-| `trace` | Fine-grained diagnostic messages   |
-| `debug` | General debugging information      |
-| `info`  | Informational messages             |
-| `warn`  | Warnings with optional error/stack |
-| `error` | Errors with error object and stack |
+| Level    | Description                        |
+|----------|---------------------------------|
+| `trace`  | Fine-grained diagnostic messages   |
+| `debug`  | General debugging information      |
+| `info`   | Informational messages             |
+| `notice` | Notable events worth highlighting  |
+| `warn`   | Warnings with optional error/stack |
+| `error`  | Errors with error object and stack |

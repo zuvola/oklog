@@ -29,6 +29,7 @@ class MyClass {
     log.trace(this, 'This is a trace message.');
     log.debug(this, 'This is a debug message.');
     log.info(this, 'This is an info message.');
+    log.notice(this, 'This is a notice message.');
     log.warn(this, 'This is a warning message.');
     try {
       throw Exception('Something went wrong!');

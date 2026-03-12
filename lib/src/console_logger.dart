@@ -33,11 +33,11 @@ class ConsoleLogger extends Logger {
     }
   }
 
-  /// Emoji icons corresponding to each [LogLevel] (trace, debug, info, warn, error).
-  final _icons = ['🐾', '🛠️', '💬', '⚠️', '❌'];
+  /// Emoji icons corresponding to each [LogLevel] (trace, debug, info, notice, warn, error).
+  final _icons = ['🐾', '🛠️', '💬', '🔔', '⚠️', '❌'];
 
   /// ANSI 256-color codes for each [LogLevel].
-  final _colors = [30, 245, 15, 3, 9];
+  final _colors = [30, 245, 15, 14, 3, 9];
 
   /// Wraps [text] in an ANSI 256-color escape sequence.
   /// [color] is the 256-color palette index; [bg] selects background vs foreground.

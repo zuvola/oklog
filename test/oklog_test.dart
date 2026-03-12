@@ -61,6 +61,7 @@ void main() {
       logger.level = LogLevel.warn;
       logger.debug('ctx', 'debug');
       logger.info('ctx', 'info');
+      logger.notice('ctx', 'notice');
       logger.warn('ctx', 'warn');
       logger.error('ctx', 'error', null);
       expect(logger.entries.map((e) => e.level).toList(), [
@@ -74,9 +75,10 @@ void main() {
       logger.trace('ctx', 't');
       logger.debug('ctx', 'd');
       logger.info('ctx', 'i');
+      logger.notice('ctx', 'n');
       logger.warn('ctx', 'w');
       logger.error('ctx', 'e', null);
-      expect(logger.entries.length, 5);
+      expect(logger.entries.length, 6);
     });
 
     test('level error — only error passes through', () {
@@ -215,6 +217,36 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // notice
+  // ---------------------------------------------------------------------------
+  group('notice', () {
+    test('notice is logged when level is info', () {
+      logger.level = LogLevel.info;
+      logger.notice('ctx', 'notice msg');
+      expect(logger.entries.length, 1);
+      expect(logger.entries.first.level, LogLevel.notice);
+      expect(logger.entries.first.message, 'notice msg');
+    });
+
+    test('notice is suppressed when level is warn', () {
+      logger.level = LogLevel.warn;
+      logger.notice('ctx', 'notice msg');
+      expect(logger.entries, isEmpty);
+    });
+
+    test('notice sits between info and warn in ordering', () {
+      logger.level = LogLevel.notice;
+      logger.info('ctx', 'info');
+      logger.notice('ctx', 'notice');
+      logger.warn('ctx', 'warn');
+      expect(logger.entries.map((e) => e.level).toList(), [
+        LogLevel.notice,
+        LogLevel.warn,
+      ]);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // DummyLogger
   // ---------------------------------------------------------------------------
   group('DummyLogger', () {
@@ -224,6 +256,7 @@ void main() {
         dummy.trace('ctx', 'msg');
         dummy.debug('ctx', 'msg');
         dummy.info('ctx', 'msg');
+        dummy.notice('ctx', 'msg');
         dummy.warn('ctx', 'msg', Exception('e'), StackTrace.current);
         dummy.error('ctx', 'msg', Exception('e'), StackTrace.current);
       }, returnsNormally);
