@@ -3,34 +3,13 @@ import 'package:test/test.dart';
 
 /// A test logger that captures all written entries instead of printing them.
 class _CaptureLogger extends Logger {
-  final List<
-    ({
-      LogLevel level,
-      String className,
-      String message,
-      Object? error,
-      StackTrace? stackTrace,
-    })
-  >
-  entries = [];
+  final List<LogRecord> entries = [];
 
   _CaptureLogger();
 
   @override
-  void write(
-    LogLevel level,
-    String className,
-    String message, [
-    Object? error,
-    StackTrace? stackTrace,
-  ]) {
-    entries.add((
-      level: level,
-      className: className,
-      message: message,
-      error: error,
-      stackTrace: stackTrace,
-    ));
+  void write(LogEntry entry) {
+    if (entry is LogRecord) entries.add(entry);
   }
 
   void clear() => entries.clear();

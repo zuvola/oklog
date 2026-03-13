@@ -4,33 +4,56 @@ import 'logger.dart';
 class ConsoleLogger extends Logger {
   ConsoleLogger({super.level});
 
-  /// Formats and prints the log entry to stdout.
-  /// Newlines in [message] are collapsed to spaces for single-line output.
-  /// If [error] or [stackTrace] is provided, they are printed on separate lines.
+  /// Formats and prints [entry] to stdout using colored, emoji-decorated output.
   @override
-  void write(
-    LogLevel level,
-    String className,
-    String message, [
-    Object? error,
-    StackTrace? stackTrace,
-  ]) {
-    message = message.replaceAll('\n', ' ');
-    final dateString = _colorString('[${DateTime.now().toString()}]', 7, false);
+  void write(LogEntry entry) {
+    final dateString = _colorString('[${entry.timestamp}]', 7, false);
+    switch (entry) {
+      case LogRecord():
+        _writeRecord(dateString, entry);
+      case EventEntry():
+        _writeEvent(dateString, entry);
+      case MetricEntry():
+        _writeMetric(dateString, entry);
+    }
+  }
+
+  void _writeRecord(String dateString, LogRecord entry) {
+    final msg = entry.message.replaceAll('\n', ' ');
     final messageString = _colorString(
-      '$className: $message',
-      _colors[level.index],
+      '${entry.className}: $msg',
+      _colors[entry.level.index],
       false,
     );
-    final icon = _icons[level.index];
-    print('$dateString $icon $messageString');
-
-    if (error != null || stackTrace != null) {
-      print(_colorString('Error: $error', 166, false));
-      if (stackTrace != null) {
-        print(stackTrace);
-      }
+    print('$dateString ${_icons[entry.level.index]} $messageString');
+    if (entry.error != null || entry.stackTrace != null) {
+      print(_colorString('Error: ${entry.error}', 166, false));
+      if (entry.stackTrace != null) print(entry.stackTrace);
     }
+  }
+
+  void _writeEvent(String dateString, EventEntry entry) {
+    final buffer = StringBuffer('[EVENT] ${entry.className}: ${entry.message}');
+    if (entry.data != null && entry.data!.isNotEmpty) {
+      buffer.write(' : ${entry.data}');
+    }
+    if (entry.tags != null && entry.tags!.isNotEmpty) {
+      buffer.write(' tags: ${entry.tags}');
+    }
+    print('$dateString 📡 ${_colorString(buffer.toString(), 13, false)}');
+  }
+
+  void _writeMetric(String dateString, MetricEntry entry) {
+    final buffer = StringBuffer(
+      '[METRIC] ${entry.className}: ${entry.name} : ${entry.value}',
+    );
+    if (entry.unit != null && entry.unit!.isNotEmpty) {
+      buffer.write(' [${entry.unit}]');
+    }
+    if (entry.tags != null && entry.tags!.isNotEmpty) {
+      buffer.write(' tags: ${entry.tags}');
+    }
+    print('$dateString 📊 ${_colorString(buffer.toString(), 45, false)}');
   }
 
   /// Emoji icons corresponding to each [LogLevel] (trace, debug, info, notice, warn, error).

@@ -11,6 +11,7 @@ A simple yet capable logging utility for Dart and Flutter. Just log. ok.
 - Filter logs by class name using `allowList` and `denyList`
 - Silent no-op logging via `DummyLogger`
 - Global `log` instance ready to use out of the box
+- Observability support: structured events and metrics via `log.obs`
 
 ## Getting started
 
@@ -88,6 +89,61 @@ log = DummyLogger(); // all log calls become no-ops
 ```dart
 log.level = LogLevel.warn; // only warn and error are printed
 ```
+
+## Observability
+
+Access structured observability methods through `log.obs`.
+These are separate from severity-level logs and are designed for structured data
+that can later be forwarded to an external observability backend without changing call-site code.
+
+### log.obs.event
+
+Logs a named event with an optional payload and metadata tags.
+
+```dart
+log.obs.event(
+  this,              // source: pass `this`, a Type, or a String
+  'user_signed_in',  // event name / message
+  data: {'userId': '42', 'plan': 'pro'},
+  tags: {'env': 'prod'},
+);
+```
+
+Console output:
+```
+[2026-03-13 10:00:00.000] 📡 [EVENT] MyClass: user_signed_in data: {userId: 42, plan: pro} tags: {env: prod}
+```
+
+### log.obs.metric
+
+Logs a numeric measurement with an optional unit and metadata tags.
+
+```dart
+log.obs.metric(
+  this,               // source
+  'request_duration', // metric name
+  142,                // value
+  unit: 'ms',
+  tags: {'endpoint': '/api/login'},
+);
+```
+
+Console output:
+```
+[2026-03-13 10:00:00.000] 📊 [METRIC] MyClass name: request_duration value: 142 unit: ms tags: {endpoint: /api/login}
+```
+
+### Parameter reference
+
+| Parameter | Type                    | Required | Description                                              |
+|-----------|-------------------------|----------|----------------------------------------------------------|
+| `source`  | `Object` / `String`     | Yes      | Origin class. Pass `this` to resolve the runtime type automatically. |
+| `message` | `String`                | Yes (`event` only) | Human-readable event description.              |
+| `name`    | `String`                | Yes (`metric` only) | Metric name (e.g. `'request_duration'`).       |
+| `value`   | `num`                   | Yes (`metric` only) | Numeric measurement.                           |
+| `unit`    | `String?`               | No       | Unit label, e.g. `'ms'`, `'count'` (metric only).       |
+| `data`    | `Map<String, dynamic>?` | No       | Arbitrary payload (event only).                          |
+| `tags`    | `Map<String, String>?`  | No       | String metadata, e.g. environment or version.            |
 
 ## Log levels
 

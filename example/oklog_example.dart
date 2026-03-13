@@ -31,6 +31,20 @@ class MyClass {
     log.info(this, 'This is an info message.');
     log.notice(this, 'This is a notice message.');
     log.warn(this, 'This is a warning message.');
+
+    log.obs.event(
+      this,
+      'User logged in',
+      data: {'userId': 123},
+      tags: {'source': 'mobile'},
+    );
+    log.obs.metric(
+      this,
+      'API Response Time',
+      250,
+      unit: 'ms',
+      tags: {'endpoint': '/login'},
+    );
     try {
       throw Exception('Something went wrong!');
     } catch (e, st) {

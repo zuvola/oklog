@@ -1,6 +1,52 @@
 /// Severity levels for log messages, ordered from least to most severe.
 enum LogLevel { trace, debug, info, notice, warn, error }
 
+/// Base class for all log entries passed to [Logger.write].
+sealed class LogEntry {
+  /// The resolved class or component name of the log source.
+  final String className;
+
+  /// The time at which this entry was created.
+  final DateTime timestamp;
+
+  LogEntry(this.className) : timestamp = DateTime.now();
+}
+
+/// A standard severity-level log message.
+final class LogRecord extends LogEntry {
+  final LogLevel level;
+  final String message;
+  final Object? error;
+  final StackTrace? stackTrace;
+
+  LogRecord(
+    super.className,
+    this.level,
+    this.message, [
+    this.error,
+    this.stackTrace,
+  ]);
+}
+
+/// A structured observability event.
+final class EventEntry extends LogEntry {
+  final String message;
+  final Map<String, dynamic>? data;
+  final Map<String, String>? tags;
+
+  EventEntry(super.className, this.message, {this.data, this.tags});
+}
+
+/// A structured observability metric.
+final class MetricEntry extends LogEntry {
+  final String name;
+  final num value;
+  final String? unit;
+  final Map<String, String>? tags;
+
+  MetricEntry(super.className, this.name, this.value, {this.unit, this.tags});
+}
+
 /// Abstract base class for all loggers.
 ///
 /// Subclasses must implement [write] to define how log entries are output.
@@ -48,21 +94,20 @@ abstract class Logger {
     }
   }
 
-  /// Writes a log entry. Implemented by subclasses.
-  void write(
-    LogLevel level,
-    String className,
-    String message, [
-    Object? error,
-    StackTrace? stackTrace,
-  ]);
+  /// Writes a [LogEntry] to the output. Implemented by subclasses.
+  void write(LogEntry entry);
+
+  ObsLogger? _obs;
+
+  /// Entry-point for observability methods (e.g. [ObsLogger.event], [ObsLogger.metric]).
+  ObsLogger get obs => _obs ??= ObsLogger(this);
 
   /// Logs a debug-level message for [target].
   void debug(Object target, String message) {
     if (!_enabled(LogLevel.debug)) return;
     final className = _className(target);
     if (!_filter(className)) return;
-    write(LogLevel.debug, className, message);
+    write(LogRecord(className, LogLevel.debug, message));
   }
 
   /// Logs a trace-level message for [target].
@@ -70,7 +115,7 @@ abstract class Logger {
     if (!_enabled(LogLevel.trace)) return;
     final className = _className(target);
     if (!_filter(className)) return;
-    write(LogLevel.trace, className, message);
+    write(LogRecord(className, LogLevel.trace, message));
   }
 
   /// Logs an info-level message for [target].
@@ -78,7 +123,7 @@ abstract class Logger {
     if (!_enabled(LogLevel.info)) return;
     final className = _className(target);
     if (!_filter(className)) return;
-    write(LogLevel.info, className, message);
+    write(LogRecord(className, LogLevel.info, message));
   }
 
   /// Logs a notice-level message for [target].
@@ -86,7 +131,7 @@ abstract class Logger {
     if (!_enabled(LogLevel.notice)) return;
     final className = _className(target);
     if (!_filter(className)) return;
-    write(LogLevel.notice, className, message);
+    write(LogRecord(className, LogLevel.notice, message));
   }
 
   /// Logs a warn-level message for [target], with an optional [error] and [stackTrace].
@@ -99,7 +144,7 @@ abstract class Logger {
     if (!_enabled(LogLevel.warn)) return;
     final className = _className(target);
     if (!_filter(className)) return;
-    write(LogLevel.warn, className, message, error, stackTrace);
+    write(LogRecord(className, LogLevel.warn, message, error, stackTrace));
   }
 
   /// Logs an error-level message for [target], with a required [error] and optional [stackTrace].
@@ -112,6 +157,53 @@ abstract class Logger {
     if (!_enabled(LogLevel.error)) return;
     final className = _className(target);
     if (!_filter(className)) return;
-    write(LogLevel.error, className, message, error, stackTrace);
+    write(LogRecord(className, LogLevel.error, message, error, stackTrace));
+  }
+}
+
+/// Provides observability-oriented log methods (e.g. structured events).
+///
+/// Accessed via [Logger.obs] — do not instantiate directly.
+class ObsLogger {
+  final Logger _logger;
+
+  ObsLogger(this._logger);
+
+  /// Logs a structured event via the parent [Logger].
+  ///
+  /// [source] identifies the originating class or component: pass `this` to
+  /// use the runtime type, a [Type] literal, or a plain [String].
+  /// [message] is the human-readable event description.
+  /// [data] carries an optional arbitrary payload.
+  /// [tags] carries optional string metadata (e.g. environment, version).
+  void event(
+    Object source,
+    String message, {
+    Map<String, dynamic>? data,
+    Map<String, String>? tags,
+  }) {
+    final className = _logger._className(source);
+    if (!_logger._filter(className)) return;
+    _logger.write(EventEntry(className, message, data: data, tags: tags));
+  }
+
+  /// Logs a structured metric via the parent [Logger].
+  ///
+  /// [source] identifies the originating class or component: pass `this` to
+  /// use the runtime type, a [Type] literal, or a plain [String].
+  /// [name] is the metric name (e.g. `'request_duration'`).
+  /// [value] is the numeric measurement.
+  /// [unit] is the optional unit label (e.g. `'ms'`, `'count'`).
+  /// [tags] carries optional string metadata (e.g. environment, version).
+  void metric(
+    Object source,
+    String name,
+    num value, {
+    String? unit,
+    Map<String, String>? tags,
+  }) {
+    final className = _logger._className(source);
+    if (!_logger._filter(className)) return;
+    _logger.write(MetricEntry(className, name, value, unit: unit, tags: tags));
   }
 }
