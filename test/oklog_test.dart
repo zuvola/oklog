@@ -241,4 +241,31 @@ void main() {
       }, returnsNormally);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // tags
+  // ---------------------------------------------------------------------------
+  group('tags', () {
+    test('tags are stored on LogRecord', () {
+      logger.debug('ctx', 'msg', tags: {'userId': 123, 'env': 'prod'});
+      expect(logger.entries.first.tags, {'userId': 123, 'env': 'prod'});
+    });
+
+    test('tags default to null when not provided', () {
+      logger.info('ctx', 'msg');
+      expect(logger.entries.first.tags, isNull);
+    });
+
+    test('tags are forwarded for all log levels', () {
+      final tags = {'key': 'value'};
+      logger.level = LogLevel.trace;
+      logger.trace('ctx', 'msg', tags: tags);
+      logger.debug('ctx', 'msg', tags: tags);
+      logger.info('ctx', 'msg', tags: tags);
+      logger.notice('ctx', 'msg', tags: tags);
+      for (final entry in logger.entries) {
+        expect(entry.tags, tags);
+      }
+    });
+  });
 }

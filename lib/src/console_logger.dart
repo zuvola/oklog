@@ -26,6 +26,11 @@ class ConsoleLogger extends Logger {
       false,
     );
     print('$dateString ${_icons[entry.level.index]} $messageString');
+    if (entry.tags != null && entry.tags!.isNotEmpty) {
+      print(
+        _colorString('tags: ${entry.tags}', _colors[entry.level.index], false),
+      );
+    }
     if (entry.error != null || entry.stackTrace != null) {
       print(_colorString('Error: ${entry.error}', 166, false));
       if (entry.stackTrace != null) print(entry.stackTrace);

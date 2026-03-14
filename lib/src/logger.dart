@@ -18,6 +18,7 @@ final class LogRecord extends LogEntry {
   final String message;
   final Object? error;
   final StackTrace? stackTrace;
+  final Map<String, Object>? tags;
 
   LogRecord(
     super.className,
@@ -25,6 +26,7 @@ final class LogRecord extends LogEntry {
     this.message, [
     this.error,
     this.stackTrace,
+    this.tags,
   ]);
 }
 
@@ -32,7 +34,7 @@ final class LogRecord extends LogEntry {
 final class EventEntry extends LogEntry {
   final String message;
   final Map<String, dynamic>? data;
-  final Map<String, String>? tags;
+  final Map<String, Object>? tags;
 
   EventEntry(super.className, this.message, {this.data, this.tags});
 }
@@ -42,7 +44,7 @@ final class MetricEntry extends LogEntry {
   final String name;
   final num value;
   final String? unit;
-  final Map<String, String>? tags;
+  final Map<String, Object>? tags;
 
   MetricEntry(super.className, this.name, this.value, {this.unit, this.tags});
 }
@@ -103,35 +105,35 @@ abstract class Logger {
   ObsLogger get obs => _obs ??= ObsLogger(this);
 
   /// Logs a debug-level message for [target].
-  void debug(Object target, String message) {
+  void debug(Object target, String message, {Map<String, Object>? tags}) {
     if (!_enabled(LogLevel.debug)) return;
     final className = _className(target);
     if (!_filter(className)) return;
-    write(LogRecord(className, LogLevel.debug, message));
+    write(LogRecord(className, LogLevel.debug, message, null, null, tags));
   }
 
   /// Logs a trace-level message for [target].
-  void trace(Object target, String message) {
+  void trace(Object target, String message, {Map<String, Object>? tags}) {
     if (!_enabled(LogLevel.trace)) return;
     final className = _className(target);
     if (!_filter(className)) return;
-    write(LogRecord(className, LogLevel.trace, message));
+    write(LogRecord(className, LogLevel.trace, message, null, null, tags));
   }
 
   /// Logs an info-level message for [target].
-  void info(Object target, String message) {
+  void info(Object target, String message, {Map<String, Object>? tags}) {
     if (!_enabled(LogLevel.info)) return;
     final className = _className(target);
     if (!_filter(className)) return;
-    write(LogRecord(className, LogLevel.info, message));
+    write(LogRecord(className, LogLevel.info, message, null, null, tags));
   }
 
   /// Logs a notice-level message for [target].
-  void notice(Object target, String message) {
+  void notice(Object target, String message, {Map<String, Object>? tags}) {
     if (!_enabled(LogLevel.notice)) return;
     final className = _className(target);
     if (!_filter(className)) return;
-    write(LogRecord(className, LogLevel.notice, message));
+    write(LogRecord(className, LogLevel.notice, message, null, null, tags));
   }
 
   /// Logs a warn-level message for [target], with an optional [error] and [stackTrace].
@@ -180,7 +182,7 @@ class ObsLogger {
     Object source,
     String message, {
     Map<String, dynamic>? data,
-    Map<String, String>? tags,
+    Map<String, Object>? tags,
   }) {
     final className = _logger._className(source);
     if (!_logger._filter(className)) return;
@@ -200,7 +202,7 @@ class ObsLogger {
     String name,
     num value, {
     String? unit,
-    Map<String, String>? tags,
+    Map<String, Object>? tags,
   }) {
     final className = _logger._className(source);
     if (!_logger._filter(className)) return;

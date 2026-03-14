@@ -31,6 +31,11 @@ class MyClass {
     log.info(this, 'This is an info message.');
     log.notice(this, 'This is a notice message.');
     log.warn(this, 'This is a warning message.');
+    log.debug(
+      this,
+      'This is a debug message with tags.',
+      tags: {'userId': 123, 'action': 'login'},
+    );
 
     log.obs.event(
       this,
