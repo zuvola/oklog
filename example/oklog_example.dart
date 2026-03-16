@@ -19,8 +19,8 @@ void main() {
       .myMethod(); // This will not be printed because MyClass is not in the allow list
   log.info('main', 'This message will be printed because it is from main.');
 
-  // Dummy logger example
-  log = DummyLogger(); // Switch to dummy logger to suppress output
+  // Silence output by clearing all sinks
+  log.sinks.clear();
   log.debug('main', 'This message will not be printed.');
 }
 

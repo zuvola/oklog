@@ -1,3 +1,5 @@
+import 'log_sink.dart';
+
 /// Severity levels for log messages, ordered from least to most severe.
 enum LogLevel { trace, debug, info, notice, warn, error }
 
@@ -49,11 +51,11 @@ final class MetricEntry extends LogEntry {
   MetricEntry(super.className, this.name, this.value, {this.unit, this.tags});
 }
 
-/// Abstract base class for all loggers.
+/// Base class for all loggers.
 ///
-/// Subclasses must implement [write] to define how log entries are output.
+/// Can be used directly by adding [LogSink] instances to [sinks].
 /// Filtering by level and class name is handled here before [write] is called.
-abstract class Logger {
+class Logger {
   /// Minimum log level to output. Messages below this level are ignored.
   LogLevel level;
 
@@ -96,8 +98,24 @@ abstract class Logger {
     }
   }
 
-  /// Writes a [LogEntry] to the output. Implemented by subclasses.
-  void write(LogEntry entry);
+  /// Sinks that receive every log entry. Add sinks to route output to
+  /// multiple destinations (console, files, remote services, etc.).
+  final List<LogSink<dynamic>> sinks = [];
+
+  /// Forwards [record] to every registered [LogSink].
+  void _emit(LogEntry record) {
+    for (final sink in sinks) {
+      sink.log(record);
+    }
+  }
+
+  /// Writes a [LogEntry] to the output.
+  ///
+  /// The default implementation forwards the entry to all registered [sinks]
+  /// via [_emit]. Subclasses may override this to add custom behaviour, but
+  /// should call `super.write(entry)` or `_emit(entry)` to preserve sink
+  /// routing.
+  void write(LogEntry entry) => _emit(entry);
 
   ObsLogger? _obs;
 

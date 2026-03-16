@@ -226,23 +226,6 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // DummyLogger
-  // ---------------------------------------------------------------------------
-  group('DummyLogger', () {
-    test('never throws regardless of inputs', () {
-      final dummy = DummyLogger();
-      expect(() {
-        dummy.trace('ctx', 'msg');
-        dummy.debug('ctx', 'msg');
-        dummy.info('ctx', 'msg');
-        dummy.notice('ctx', 'msg');
-        dummy.warn('ctx', 'msg', Exception('e'), StackTrace.current);
-        dummy.error('ctx', 'msg', Exception('e'), StackTrace.current);
-      }, returnsNormally);
-    });
-  });
-
-  // ---------------------------------------------------------------------------
   // tags
   // ---------------------------------------------------------------------------
   group('tags', () {

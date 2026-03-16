@@ -1,43 +1,50 @@
+import 'log_formatter.dart';
 import 'logger.dart';
 
-/// A logger that prints colored, emoji-decorated log entries to the console.
-class ConsoleLogger extends Logger {
-  ConsoleLogger({super.level});
-
-  /// Formats and prints [entry] to stdout using colored, emoji-decorated output.
+/// A [LogFormatter] that produces colored, emoji-annotated console output.
+///
+/// This is the default formatter used by [ConsoleSink]. Override or replace it
+/// to customize how entries are rendered:
+/// ```dart
+/// log.sinks.add(ConsoleSink(formatter: MyFormatter()));
+/// ```
+class ConsoleFormatter extends LogFormatter<String> {
   @override
-  void write(LogEntry entry) {
+  String format(LogEntry entry) {
     final dateString = _colorString('[${entry.timestamp}]', 7, false);
     switch (entry) {
       case LogRecord():
-        _writeRecord(dateString, entry);
+        return _formatRecord(dateString, entry);
       case EventEntry():
-        _writeEvent(dateString, entry);
+        return _formatEvent(dateString, entry);
       case MetricEntry():
-        _writeMetric(dateString, entry);
+        return _formatMetric(dateString, entry);
     }
   }
 
-  void _writeRecord(String dateString, LogRecord entry) {
+  String _formatRecord(String dateString, LogRecord entry) {
     final msg = entry.message.replaceAll('\n', ' ');
     final messageString = _colorString(
       '${entry.className}: $msg',
       _colors[entry.level.index],
       false,
     );
-    print('$dateString ${_icons[entry.level.index]} $messageString');
+    final buffer = StringBuffer(
+      '$dateString ${_icons[entry.level.index]} $messageString',
+    );
     if (entry.tags != null && entry.tags!.isNotEmpty) {
-      print(
-        _colorString('tags: ${entry.tags}', _colors[entry.level.index], false),
+      buffer.write(
+        '\n${_colorString('tags: ${entry.tags}', _colors[entry.level.index], false)}',
       );
     }
     if (entry.error != null || entry.stackTrace != null) {
-      print(_colorString('Error: ${entry.error}', 166, false));
-      if (entry.stackTrace != null) print(entry.stackTrace);
+      buffer.write('\n${_colorString('Error: ${entry.error}', 166, false)}');
+      if (entry.stackTrace != null) buffer.write('\n${entry.stackTrace}');
     }
+    return buffer.toString();
   }
 
-  void _writeEvent(String dateString, EventEntry entry) {
+  String _formatEvent(String dateString, EventEntry entry) {
     final buffer = StringBuffer('[EVENT] ${entry.className}: ${entry.message}');
     if (entry.data != null && entry.data!.isNotEmpty) {
       buffer.write(' : ${entry.data}');
@@ -45,10 +52,10 @@ class ConsoleLogger extends Logger {
     if (entry.tags != null && entry.tags!.isNotEmpty) {
       buffer.write(' tags: ${entry.tags}');
     }
-    print('$dateString 📡 ${_colorString(buffer.toString(), 13, false)}');
+    return '$dateString 📡 ${_colorString(buffer.toString(), 13, false)}';
   }
 
-  void _writeMetric(String dateString, MetricEntry entry) {
+  String _formatMetric(String dateString, MetricEntry entry) {
     final buffer = StringBuffer(
       '[METRIC] ${entry.className}: ${entry.name} : ${entry.value}',
     );
@@ -58,7 +65,7 @@ class ConsoleLogger extends Logger {
     if (entry.tags != null && entry.tags!.isNotEmpty) {
       buffer.write(' tags: ${entry.tags}');
     }
-    print('$dateString 📊 ${_colorString(buffer.toString(), 45, false)}');
+    return '$dateString 📊 ${_colorString(buffer.toString(), 45, false)}';
   }
 
   /// Emoji icons corresponding to each [LogLevel] (trace, debug, info, notice, warn, error).
@@ -68,7 +75,6 @@ class ConsoleLogger extends Logger {
   final _colors = [30, 245, 15, 14, 3, 9];
 
   /// Wraps [text] in an ANSI 256-color escape sequence.
-  /// [color] is the 256-color palette index; [bg] selects background vs foreground.
   String _colorString(String text, int? color, bool bg) {
     final typestr = bg ? '48' : '38';
     return color != null ? '\x1B[$typestr;5;${color}m$text\x1B[0m' : text;

@@ -7,9 +7,9 @@ A simple yet capable logging utility for Dart and Flutter. Just log. ok.
 ## Features
 
 - Six log levels: `trace`, `debug`, `info`, `notice`, `warn`, `error`
-- Colored, emoji-decorated console output via `ConsoleLogger`
+- Colored, emoji-decorated console output via `DefaultLogger`
 - Filter logs by class name using `allowList` and `denyList`
-- Silent no-op logging via `DummyLogger`
+- Extensible output via `LogSink` — route logs to console, files, remote services, etc.
 - Global `log` instance ready to use out of the box
 - Observability support: structured events and metrics via `log.obs`
 
@@ -78,10 +78,62 @@ log.allowList.clear();
 log.denyList.clear();
 ```
 
-### Silencing output with DummyLogger
+### Silencing output
 
 ```dart
-log = DummyLogger(); // all log calls become no-ops
+log.sinks.clear(); // remove all sinks to suppress output
+```
+
+### Custom sinks
+
+Adding a sink routes every log entry to that destination. Multiple sinks can be
+active at the same time.
+
+Implement `LogSink<T>` to send entries anywhere. Pass a `LogFormatter<T>` to the
+super constructor — the base class calls `formatter.format(record)` and forwards
+the result to your `write` method:
+
+```dart
+class FileSink extends LogSink<String> {
+  FileSink({LogFormatter<String>? formatter})
+    : super(formatter ?? ConsoleFormatter());
+
+  @override
+  void write(String formatted, LogEntry record) {
+    // write formatted string to a file, remote service, etc.
+  }
+}
+
+log.sinks.add(FileSink());
+```
+
+The built-in `ConsoleSink` prints colored, emoji-decorated output and is added
+automatically by `DefaultLogger`.
+
+### Custom formatters
+
+`ConsoleSink` accepts a `LogFormatter<String>` that converts a `LogEntry` to a
+string. Replace the default `ConsoleFormatter` to change how entries are rendered
+without touching sink behaviour:
+
+```dart
+class JsonFormatter extends LogFormatter<String> {
+  @override
+  String format(LogEntry entry) {
+    if (entry is LogRecord) {
+      return jsonEncode({
+        'level': entry.level.name,
+        'class': entry.className,
+        'message': entry.message,
+      });
+    }
+    return entry.toString();
+  }
+}
+
+log.sinks
+  ..clear()
+  ..add(ConsoleSink(formatter: JsonFormatter()));
 ```
 
 ### Changing the log level
