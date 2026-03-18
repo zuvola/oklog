@@ -181,7 +181,17 @@ final exporter = SlackErrorExporter(
 );
 
 log.processors.add(buffer);
-log.sinks.add(ErrorAlertSink(buffer, exporter));
+log.sinks.add(
+  ErrorAlertSink(
+    buffer,
+    exporter,
+    metadata: {
+      'app': 'MyApp',
+      'version': '1.0.0',
+      'env': 'production',
+    },
+  ),
+);
 
 log.info('main', 'Application started.');
 log.warn('main', 'Cache miss — fetching from origin.');
@@ -201,19 +211,31 @@ Implement the `ErrorExporter` interface to route error reports to any backend
 ```dart
 class MyExporter implements ErrorExporter {
   @override
-  Future<void> send(LogRecord error, List<LogRecord> contextLogs) async {
+  Future<void> send(
+    LogRecord error,
+    List<LogRecord> contextLogs,
+    Map<String, String> metadata,
+  ) async {
     // `error`       — the error-level LogRecord that triggered the alert
     // `contextLogs` — recent records from ContextBufferProcessor
+    // `metadata`    — key-value pairs set on ErrorAlertSink (e.g. app name, version)
     await myService.report(
       message: error.message,
       context: contextLogs.map((r) => r.message).toList(),
+      metadata: metadata,
     );
   }
 }
 
 final buffer = ContextBufferProcessor();
 log.processors.add(buffer);
-log.sinks.add(ErrorAlertSink(buffer, MyExporter()));
+log.sinks.add(
+  ErrorAlertSink(
+    buffer,
+    MyExporter(),
+    metadata: {'app': 'MyApp', 'version': '1.0.0'},
+  ),
+);
 ```
 
 ## Observability

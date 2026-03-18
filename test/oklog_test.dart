@@ -430,7 +430,11 @@ class _TestExporter implements ErrorExporter {
   _TestExporter(this.errors, this.contexts);
 
   @override
-  Future<void> send(LogRecord error, List<LogRecord> contextLogs) async {
+  Future<void> send(
+    LogRecord error,
+    List<LogRecord> contextLogs,
+    Map<String, String> metadata,
+  ) async {
     errors.add(error);
     contexts.add(contextLogs);
   }

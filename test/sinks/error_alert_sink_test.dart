@@ -3,11 +3,18 @@ import 'package:test/test.dart';
 
 /// Mock [ErrorExporter] that records all [send] invocations.
 class _MockExporter implements ErrorExporter {
-  final List<({LogRecord error, List<LogRecord> context})> calls = [];
+  final List<
+    ({LogRecord error, List<LogRecord> context, Map<String, String> metadata})
+  >
+  calls = [];
 
   @override
-  Future<void> send(LogRecord error, List<LogRecord> contextLogs) async {
-    calls.add((error: error, context: contextLogs));
+  Future<void> send(
+    LogRecord error,
+    List<LogRecord> contextLogs,
+    Map<String, String> metadata,
+  ) async {
+    calls.add((error: error, context: contextLogs, metadata: metadata));
   }
 
   bool get wasCalled => calls.isNotEmpty;
@@ -119,6 +126,26 @@ void main() {
       expect(received.error, err);
       expect(received.stackTrace, st);
       expect(received.className, 'DiskService');
+    });
+
+    // -------------------------------------------------------------------------
+    // Metadata forwarding
+    // -------------------------------------------------------------------------
+    test('forwards metadata to exporter', () async {
+      final meta = {'app': 'MyApp', 'version': '1.2.3', 'env': 'production'};
+      final sinkWithMeta = ErrorAlertSink(buffer, exporter, metadata: meta);
+
+      sinkWithMeta.emit(LogRecord('ctx', LogLevel.error, 'boom'));
+      await Future.microtask(() {});
+
+      expect(exporter.calls.first.metadata, equals(meta));
+    });
+
+    test('forwards empty metadata when none is set', () async {
+      sink.emit(LogRecord('ctx', LogLevel.error, 'boom'));
+      await Future.microtask(() {});
+
+      expect(exporter.calls.first.metadata, isEmpty);
     });
 
     // -------------------------------------------------------------------------

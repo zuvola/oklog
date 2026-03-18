@@ -29,8 +29,12 @@ class SlackErrorExporter implements ErrorExporter {
   SlackErrorExporter(this.webhookUrl);
 
   @override
-  Future<void> send(LogRecord error, List<LogRecord> contextLogs) async {
-    final payload = _buildPayload(error, contextLogs);
+  Future<void> send(
+    LogRecord error,
+    List<LogRecord> contextLogs,
+    Map<String, String> metadata,
+  ) async {
+    final payload = _buildPayload(error, contextLogs, metadata);
     final uri = Uri.parse(webhookUrl);
     final client = HttpClient();
     try {
@@ -50,6 +54,7 @@ class SlackErrorExporter implements ErrorExporter {
   Map<String, dynamic> _buildPayload(
     LogRecord error,
     List<LogRecord> contextLogs,
+    Map<String, String> metadata,
   ) {
     final blocks = <Map<String, dynamic>>[];
 
@@ -61,6 +66,19 @@ class SlackErrorExporter implements ErrorExporter {
         'text': ':rotating_light: Error: ${error.className}',
       },
     });
+
+    // App metadata (e.g. app name, version, environment)
+    if (metadata.isNotEmpty) {
+      final metaText = metadata.entries
+          .map((e) => '*${e.key}:* ${e.value}')
+          .join('  |  ');
+      blocks.add({
+        'type': 'context',
+        'elements': [
+          {'type': 'mrkdwn', 'text': metaText},
+        ],
+      });
+    }
 
     // Error message
     blocks.add({

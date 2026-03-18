@@ -33,7 +33,13 @@ void main() {
   // Insert the context buffer at the start of the processor pipeline so it
   // captures all subsequent log entries.
   log.processors.insert(0, buffer);
-  log.sinks.add(ErrorAlertSink(buffer, slackExporter));
+  log.sinks.add(
+    ErrorAlertSink(
+      buffer,
+      slackExporter,
+      metadata: {'app': 'MyApp', 'version': '1.0.0', 'env': 'production'},
+    ),
+  );
 
   log.info('main', 'Application started.');
   log.warn('main', 'Cache miss — fetching from origin.');

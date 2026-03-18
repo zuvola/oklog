@@ -1,3 +1,7 @@
+## 1.3.0
+- `ErrorAlertSink` accepts an optional `metadata` parameter (`Map<String, String>`) for attaching common information such as app name, version, and environment to every error report.
+- `SlackErrorExporter` renders metadata as a context block beneath the error header in the Slack notification.
+
 ## 1.2.0
 **This release contains breaking changes.** The API has been significantly redesigned.
 Please refer to the [README](README.md) for updated usage.
