@@ -39,6 +39,9 @@ class SlackErrorExporter implements ErrorExporter {
       request.write(jsonEncode(payload));
       final response = await request.close();
       await response.drain<void>();
+    } catch (e) {
+      // Handle any errors that occur during the HTTP request.
+      print('Failed to send error report to Slack: $e');
     } finally {
       client.close();
     }

@@ -30,7 +30,9 @@ void main() {
   final slackExporter = SlackErrorExporter(
     'https://hooks.slack.com/services/YOUR/WEBHOOK/URL',
   );
-  log.processors.add(buffer);
+  // Insert the context buffer at the start of the processor pipeline so it
+  // captures all subsequent log entries.
+  log.processors.insert(0, buffer);
   log.sinks.add(ErrorAlertSink(buffer, slackExporter));
 
   log.info('main', 'Application started.');
