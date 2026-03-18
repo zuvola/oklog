@@ -7,11 +7,12 @@ A simple yet capable logging utility for Dart and Flutter. Just log. ok.
 ## Features
 
 - Six log levels: `trace`, `debug`, `info`, `notice`, `warn`, `error`
-- Colored, emoji-decorated console output via `DefaultLogger`
-- Filter logs by class name using `allowList` and `denyList`
-- Extensible output via `LogSink` — route logs to console, files, remote services, etc.
-- Global `log` instance ready to use out of the box
+- Colored, emoji-decorated console output via `ConsoleSink` and `ConsoleFormatter`
+- Filter logs by level via `LevelFilterProcessor` and by class name via `NameFilterProcessor`
+- Extensible pipeline: add `LogProcessor` instances to transform/filter, and `LogSink` instances to route output
+- Global `log` instance (`OkLogger`) ready to use out of the box
 - Observability support: structured events and metrics via `log.obs`
+- Error alerting with context: `ContextBufferProcessor` + `ErrorAlertSink` + `ErrorExporter`; built-in `SlackErrorExporter` included
 
 ## Getting started
 
@@ -19,7 +20,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  oklog: ^1.0.0
+  oklog: ^1.1.0
 ```
 
 Then import the library:
@@ -47,7 +48,7 @@ void main() {
   try {
     throw Exception('Something went wrong!');
   } catch (e, st) {
-    log.error('main', 'An error occurred.', e, st);
+    log.error('main', 'An error occurred.', error: e, stackTrace: st);
   }
 }
 ```
@@ -64,18 +65,28 @@ class MyClass {
 }
 ```
 
-### Filtering with allowList and denyList
+### Attaching structured attributes
+
+All log methods accept an optional `attrs` map for structured key-value metadata:
+
+```dart
+log.debug(this, 'User action', attrs: {'userId': 123, 'action': 'login'});
+```
+
+### Filtering by class name
+
+Use `log.nameFilter` (a `NameFilterProcessor`) to restrict which classes are logged:
 
 ```dart
 // Only log messages from classes whose name contains 'main'
-log.allowList = ['main'];
+log.nameFilter.allowList = ['main'];
 
 // Suppress log messages from classes whose name contains 'MyClass'
-log.denyList = ['MyClass'];
+log.nameFilter.denyList = ['MyClass'];
 
 // Clear filters
-log.allowList.clear();
-log.denyList.clear();
+log.nameFilter.allowList = [];
+log.nameFilter.denyList = [];
 ```
 
 ### Silencing output
@@ -84,31 +95,31 @@ log.denyList.clear();
 log.sinks.clear(); // remove all sinks to suppress output
 ```
 
-### Custom sinks
-
-Adding a sink routes every log entry to that destination. Multiple sinks can be
-active at the same time.
-
-Implement `LogSink<T>` to send entries anywhere. Pass a `LogFormatter<T>` to the
-super constructor — the base class calls `formatter.format(record)` and forwards
-the result to your `write` method:
+### Changing the log level
 
 ```dart
-class FileSink extends LogSink<String> {
-  FileSink({LogFormatter<String>? formatter})
-    : super(formatter ?? ConsoleFormatter());
+log.level = LogLevel.warn; // only warn and error are printed
+```
 
+### Custom sinks
+
+Implement `LogSink` and override `emit` to route entries anywhere:
+
+```dart
+class FileSink extends LogSink {
   @override
-  void write(String formatted, LogEntry record) {
-    // write formatted string to a file, remote service, etc.
+  void emit(LogEntry entry) {
+    if (entry is LogRecord) {
+      // write to a file, remote service, etc.
+    }
   }
 }
 
 log.sinks.add(FileSink());
 ```
 
-The built-in `ConsoleSink` prints colored, emoji-decorated output and is added
-automatically by `DefaultLogger`.
+Multiple sinks can be active at the same time. The built-in `ConsoleSink` is
+added automatically by `OkLogger`.
 
 ### Custom formatters
 
@@ -136,10 +147,73 @@ log.sinks
   ..add(ConsoleSink(formatter: JsonFormatter()));
 ```
 
-### Changing the log level
+### Custom processors
+
+Implement `LogProcessor` and return `false` to drop an entry from the pipeline:
 
 ```dart
-log.level = LogLevel.warn; // only warn and error are printed
+class SamplingProcessor implements LogProcessor {
+  @override
+  bool process(LogEntry entry) => Random().nextDouble() > 0.9; // keep 10%
+}
+
+log.processors.add(SamplingProcessor());
+```
+
+### Error alerting with context
+
+`ContextBufferProcessor` keeps a ring buffer of recent `LogRecord` entries.
+`ErrorAlertSink` detects error-level records and forwards them — together with
+that buffer — to an `ErrorExporter`, giving the recipient rich context about
+what happened before the error.
+
+#### SlackErrorExporter
+
+The built-in `SlackErrorExporter` sends a formatted [Block Kit](https://api.slack.com/block-kit)
+message to a Slack channel via an [Incoming Webhook](https://api.slack.com/messaging/webhooks).
+The notification includes the error message, error object, stack trace, and the
+recent context logs captured by `ContextBufferProcessor`.
+
+```dart
+final buffer = ContextBufferProcessor();
+final exporter = SlackErrorExporter(
+  'https://hooks.slack.com/services/YOUR/WEBHOOK/URL',
+);
+
+log.processors.add(buffer);
+log.sinks.add(ErrorAlertSink(buffer, exporter));
+
+log.info('main', 'Application started.');
+log.warn('main', 'Cache miss — fetching from origin.');
+try {
+  throw Exception('Database connection failed');
+} catch (e, st) {
+  // Sends a Slack message that includes the error plus the info/warn above.
+  log.error('main', 'Unhandled error.', error: e, stackTrace: st);
+}
+```
+
+#### Custom ErrorExporter
+
+Implement the `ErrorExporter` interface to route error reports to any backend
+(Sentry, PagerDuty, a custom REST API, etc.):
+
+```dart
+class MyExporter implements ErrorExporter {
+  @override
+  Future<void> send(LogRecord error, List<LogRecord> contextLogs) async {
+    // `error`       — the error-level LogRecord that triggered the alert
+    // `contextLogs` — recent records from ContextBufferProcessor
+    await myService.report(
+      message: error.message,
+      context: contextLogs.map((r) => r.message).toList(),
+    );
+  }
+}
+
+final buffer = ContextBufferProcessor();
+log.processors.add(buffer);
+log.sinks.add(ErrorAlertSink(buffer, MyExporter()));
 ```
 
 ## Observability
@@ -150,25 +224,25 @@ that can later be forwarded to an external observability backend without changin
 
 ### log.obs.event
 
-Logs a named event with an optional payload and metadata tags.
+Logs a named event with an optional payload and metadata attributes.
 
 ```dart
 log.obs.event(
   this,              // source: pass `this`, a Type, or a String
   'user_signed_in',  // event name / message
   data: {'userId': '42', 'plan': 'pro'},
-  tags: {'env': 'prod'},
+  attrs: {'env': 'prod'},
 );
 ```
 
 Console output:
 ```
-[2026-03-13 10:00:00.000] 📡 [EVENT] MyClass: user_signed_in data: {userId: 42, plan: pro} tags: {env: prod}
+[2026-03-13 10:00:00.000] 📡 [EVENT] MyClass: user_signed_in : {userId: 42, plan: pro} attrs: {env: prod}
 ```
 
 ### log.obs.metric
 
-Logs a numeric measurement with an optional unit and metadata tags.
+Logs a numeric measurement with an optional unit and metadata attributes.
 
 ```dart
 log.obs.metric(
@@ -176,31 +250,31 @@ log.obs.metric(
   'request_duration', // metric name
   142,                // value
   unit: 'ms',
-  tags: {'endpoint': '/api/login'},
+  attrs: {'endpoint': '/api/login'},
 );
 ```
 
 Console output:
 ```
-[2026-03-13 10:00:00.000] 📊 [METRIC] MyClass name: request_duration value: 142 unit: ms tags: {endpoint: /api/login}
+[2026-03-13 10:00:00.000] 📊 [METRIC] MyClass: request_duration : 142 [ms] attrs: {endpoint: /api/login}
 ```
 
 ### Parameter reference
 
 | Parameter | Type                    | Required | Description                                              |
 |-----------|-------------------------|----------|----------------------------------------------------------|
-| `source`  | `Object` / `String`     | Yes      | Origin class. Pass `this` to resolve the runtime type automatically. |
+| `source`  | `Object`                | Yes      | Origin class. Pass `this` to resolve the runtime type automatically, or a `Type` or `String`. |
 | `message` | `String`                | Yes (`event` only) | Human-readable event description.              |
 | `name`    | `String`                | Yes (`metric` only) | Metric name (e.g. `'request_duration'`).       |
 | `value`   | `num`                   | Yes (`metric` only) | Numeric measurement.                           |
 | `unit`    | `String?`               | No       | Unit label, e.g. `'ms'`, `'count'` (metric only).       |
 | `data`    | `Map<String, dynamic>?` | No       | Arbitrary payload (event only).                          |
-| `tags`    | `Map<String, String>?`  | No       | String metadata, e.g. environment or version.            |
+| `attrs`   | `Map<String, Object>?`  | No       | Structured metadata, e.g. environment or version.        |
 
 ## Log levels
 
 | Level    | Description                        |
-|----------|---------------------------------|
+|----------|------------------------------------|
 | `trace`  | Fine-grained diagnostic messages   |
 | `debug`  | General debugging information      |
 | `info`   | Informational messages             |

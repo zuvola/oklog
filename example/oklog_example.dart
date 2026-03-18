@@ -1,27 +1,48 @@
 import 'package:oklog/oklog.dart';
 
 void main() {
-  log.level = LogLevel.trace; // Set log level to trace to see all messages
+  log.level = LogLevel.trace;
+
   log.info('main', 'Hello, OkLog!');
   final myClass = MyClass();
   myClass.myMethod();
 
-  // Deny list example
-  log.denyList = ['MyClass']; // Exclude logs from MyClass
-  myClass
-      .myMethod(); // This will not be printed because MyClass is in the deny list
+  // Deny list: exclude logs from MyClass using the built-in nameFilter.
+  log.nameFilter.denyList = ['MyClass'];
+  myClass.myMethod(); // suppressed — MyClass is denied
   log.info('main', 'This message will still be printed.');
-  log.denyList.clear(); // Clear deny list
+  log.nameFilter.denyList = [];
 
-  // Allow list example
-  log.allowList = ['main']; // Only include logs from 'main'
-  myClass
-      .myMethod(); // This will not be printed because MyClass is not in the allow list
+  // Allow list: only allow logs from 'main'.
+  log.nameFilter.allowList = ['main'];
+  myClass.myMethod(); // suppressed — MyClass is not in the allow list
   log.info('main', 'This message will be printed because it is from main.');
+  log.nameFilter.allowList = [];
 
-  // Silence output by clearing all sinks
+  // Silence output by clearing all sinks.
   log.sinks.clear();
   log.debug('main', 'This message will not be printed.');
+
+  // --- ErrorAlertSink + SlackErrorExporter ---
+  // ContextBufferProcessor retains recent log records so that they can be
+  // forwarded alongside an error notification for added context.
+  final buffer = ContextBufferProcessor();
+  final slackExporter = SlackErrorExporter(
+    'https://hooks.slack.com/services/YOUR/WEBHOOK/URL',
+  );
+  log.processors.add(buffer);
+  log.sinks.add(ErrorAlertSink(buffer, slackExporter));
+
+  log.info('main', 'Application started.');
+  log.warn('main', 'Cache miss — fetching from origin.');
+  try {
+    throw Exception('Database connection failed');
+  } catch (e, st) {
+    // ErrorAlertSink detects the error level, then calls
+    // SlackErrorExporter.send() with the error record and the buffered
+    // context logs (the info + warn above), posting a rich Slack message.
+    log.error('main', 'Unhandled error.', error: e, stackTrace: st);
+  }
 }
 
 class MyClass {
@@ -33,27 +54,27 @@ class MyClass {
     log.warn(this, 'This is a warning message.');
     log.debug(
       this,
-      'This is a debug message with tags.',
-      tags: {'userId': 123, 'action': 'login'},
+      'This is a debug message with attrs.',
+      attrs: {'userId': 123, 'action': 'login'},
     );
 
     log.obs.event(
       this,
       'User logged in',
       data: {'userId': 123},
-      tags: {'source': 'mobile'},
+      attrs: {'source': 'mobile'},
     );
     log.obs.metric(
       this,
       'API Response Time',
       250,
       unit: 'ms',
-      tags: {'endpoint': '/login'},
+      attrs: {'endpoint': '/login'},
     );
     try {
       throw Exception('Something went wrong!');
     } catch (e, st) {
-      log.error(this, 'An error occurred.', e, st);
+      log.error(this, 'An error occurred.', error: e, stackTrace: st);
     }
   }
 }

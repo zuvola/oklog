@@ -1,5 +1,5 @@
-import 'log_formatter.dart';
-import 'logger.dart';
+import '../core/log_entry.dart';
+import '../core/log_formatter.dart';
 
 /// A [LogFormatter] that produces colored, emoji-annotated console output.
 ///
@@ -32,9 +32,9 @@ class ConsoleFormatter extends LogFormatter<String> {
     final buffer = StringBuffer(
       '$dateString ${_icons[entry.level.index]} $messageString',
     );
-    if (entry.tags != null && entry.tags!.isNotEmpty) {
+    if (entry.attrs != null && entry.attrs!.isNotEmpty) {
       buffer.write(
-        '\n${_colorString('tags: ${entry.tags}', _colors[entry.level.index], false)}',
+        '\n${_colorString('attrs: ${entry.attrs}', _colors[entry.level.index], false)}',
       );
     }
     if (entry.error != null || entry.stackTrace != null) {
@@ -49,8 +49,8 @@ class ConsoleFormatter extends LogFormatter<String> {
     if (entry.data != null && entry.data!.isNotEmpty) {
       buffer.write(' : ${entry.data}');
     }
-    if (entry.tags != null && entry.tags!.isNotEmpty) {
-      buffer.write(' tags: ${entry.tags}');
+    if (entry.attrs != null && entry.attrs!.isNotEmpty) {
+      buffer.write(' attrs: ${entry.attrs}');
     }
     return '$dateString 📡 ${_colorString(buffer.toString(), 13, false)}';
   }
@@ -62,8 +62,8 @@ class ConsoleFormatter extends LogFormatter<String> {
     if (entry.unit != null && entry.unit!.isNotEmpty) {
       buffer.write(' [${entry.unit}]');
     }
-    if (entry.tags != null && entry.tags!.isNotEmpty) {
-      buffer.write(' tags: ${entry.tags}');
+    if (entry.attrs != null && entry.attrs!.isNotEmpty) {
+      buffer.write(' attrs: ${entry.attrs}');
     }
     return '$dateString 📊 ${_colorString(buffer.toString(), 45, false)}';
   }

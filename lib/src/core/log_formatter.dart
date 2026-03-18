@@ -1,4 +1,4 @@
-import 'logger.dart';
+import 'log_entry.dart';
 
 /// Abstract formatter responsible for converting a [LogEntry] to type [T].
 ///

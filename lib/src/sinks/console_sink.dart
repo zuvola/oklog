@@ -1,7 +1,7 @@
+import '../core/log_entry.dart';
+import '../core/log_formatter.dart';
+import '../core/log_sink.dart';
 import 'console_formatter.dart';
-import 'log_formatter.dart';
-import 'log_sink.dart';
-import 'logger.dart';
 
 /// A [LogSink] that prints log entries to the console.
 ///
@@ -11,12 +11,14 @@ import 'logger.dart';
 /// ```dart
 /// log.sinks.add(ConsoleSink(formatter: MyFormatter()));
 /// ```
-class ConsoleSink extends LogSink<String> {
+class ConsoleSink extends LogSink {
+  final LogFormatter<String> formatter;
+
   ConsoleSink({LogFormatter<String>? formatter})
-    : super(formatter ?? ConsoleFormatter());
+    : formatter = formatter ?? ConsoleFormatter();
 
   @override
-  void write(String formatted, LogEntry record) {
-    print(formatted);
+  void emit(LogEntry entry) {
+    print(formatter.format(entry));
   }
 }
