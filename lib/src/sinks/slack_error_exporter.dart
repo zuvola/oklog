@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:http/http.dart' as http;
 
 import '../core/log_entry.dart';
 import 'error_exporter.dart';
@@ -36,18 +37,15 @@ class SlackErrorExporter implements ErrorExporter {
   ) async {
     final payload = _buildPayload(error, contextLogs, metadata);
     final uri = Uri.parse(webhookUrl);
-    final client = HttpClient();
     try {
-      final request = await client.postUrl(uri);
-      request.headers.contentType = ContentType.json;
-      request.write(jsonEncode(payload));
-      final response = await request.close();
-      await response.drain<void>();
+      await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
     } catch (e) {
       // Handle any errors that occur during the HTTP request.
       print('Failed to send error report to Slack: $e');
-    } finally {
-      client.close();
     }
   }
 
