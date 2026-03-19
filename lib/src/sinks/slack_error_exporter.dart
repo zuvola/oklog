@@ -1,136 +1,43 @@
-import 'dart:convert';
+import 'http_error_exporter.dart';
+import 'slack_payload_formatter.dart';
 
-import 'package:http/http.dart' as http;
-
-import '../core/log_entry.dart';
-import 'error_exporter.dart';
-
-/// An [ErrorExporter] that sends error reports to a Slack channel via an
-/// Incoming Webhook URL.
+/// A convenience [ErrorExporter] that sends error reports to a Slack channel
+/// via an Incoming Webhook URL.
 ///
-/// Formats the error record and recent context logs into a Slack Block Kit
-/// message and delivers it via HTTP POST.
+/// This is a thin wrapper around [HttpErrorExporter] pre-configured with
+/// [SlackPayloadFormatter]. For full control over the formatter or transport,
+/// compose [HttpErrorExporter] and [SlackPayloadFormatter] directly.
 ///
 /// To obtain a webhook URL, create an Incoming Webhook in your Slack app
 /// settings: https://api.slack.com/messaging/webhooks
 ///
-/// Example:
+/// Use [extraPayload] to merge additional top-level fields into the Slack
+/// webhook payload before delivery. This is useful when routing through a
+/// proxy that requires extra keys (e.g. `channel`, `username`, a routing
+/// token, etc.):
+///
 /// ```dart
-/// final buffer = ContextBufferProcessor();
-/// final exporter = SlackErrorExporter('https://hooks.slack.com/services/...');
-/// final logger = Logger(
-///   processors: [LevelFilterProcessor(), buffer],
-///   sinks: [ConsoleSink(), ErrorAlertSink(buffer, exporter)],
+/// final exporter = SlackErrorExporter(
+///   'https://proxy.example.com/slack',
+///   extraPayload: {
+///     'channel': '#alerts',
+///     'username': 'ErrorBot',
+///     'x-routing-key': 'my-service',
+///   },
 /// );
 /// ```
-class SlackErrorExporter implements ErrorExporter {
-  /// The Slack Incoming Webhook URL.
-  final String webhookUrl;
-
-  SlackErrorExporter(this.webhookUrl);
-
-  @override
-  Future<void> send(
-    LogRecord error,
-    List<LogRecord> contextLogs,
-    Map<String, String> metadata,
-  ) async {
-    final payload = _buildPayload(error, contextLogs, metadata);
-    final uri = Uri.parse(webhookUrl);
-    try {
-      await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
+class SlackErrorExporter extends HttpErrorExporter {
+  /// Creates a [SlackErrorExporter] that posts to the given [webhookUrl].
+  ///
+  /// [extraPayload] — optional map of additional top-level fields merged into
+  /// the Slack Block Kit payload before each send. Intended for proxy setups
+  /// that require routing or authentication fields alongside `blocks`.
+  SlackErrorExporter(String webhookUrl, {Map<String, dynamic>? extraPayload})
+    : super(
+        webhookUrl,
+        SlackPayloadFormatter(),
+        payloadTransformer: extraPayload != null
+            ? (payload) => {...payload, ...extraPayload}
+            : null,
       );
-    } catch (e) {
-      // Handle any errors that occur during the HTTP request.
-      print('Failed to send error report to Slack: $e');
-    }
-  }
-
-  Map<String, dynamic> _buildPayload(
-    LogRecord error,
-    List<LogRecord> contextLogs,
-    Map<String, String> metadata,
-  ) {
-    final blocks = <Map<String, dynamic>>[];
-
-    // Header
-    blocks.add({
-      'type': 'header',
-      'text': {
-        'type': 'plain_text',
-        'text': ':rotating_light: Error: ${error.className}',
-      },
-    });
-
-    // App metadata (e.g. app name, version, environment)
-    if (metadata.isNotEmpty) {
-      final metaText = metadata.entries
-          .map((e) => '*${e.key}:* ${e.value}')
-          .join('  |  ');
-      blocks.add({
-        'type': 'context',
-        'elements': [
-          {'type': 'mrkdwn', 'text': metaText},
-        ],
-      });
-    }
-
-    // Error message
-    blocks.add({
-      'type': 'section',
-      'text': {'type': 'mrkdwn', 'text': '*Message:* ${error.message}'},
-    });
-
-    // Error object
-    if (error.error != null) {
-      blocks.add({
-        'type': 'section',
-        'text': {'type': 'mrkdwn', 'text': '*Error:* `${error.error}`'},
-      });
-    }
-
-    // Stack trace
-    if (error.stackTrace != null) {
-      final st = error.stackTrace.toString();
-      final truncated = st.length > 2000 ? '${st.substring(0, 2000)}...' : st;
-      blocks.add({
-        'type': 'section',
-        'text': {'type': 'mrkdwn', 'text': '*Stack Trace:*\n```$truncated```'},
-      });
-    }
-
-    // Context logs
-    if (contextLogs.isNotEmpty) {
-      final contextText = contextLogs
-          .map((r) {
-            return '[${r.timestamp.toIso8601String()}]'
-                ' [${r.level.name.toUpperCase()}]'
-                ' ${r.className}: ${r.message}';
-          })
-          .join('\n');
-      final truncated = contextText.length > 2000
-          ? '${contextText.substring(0, 2000)}...'
-          : contextText;
-      blocks.add({
-        'type': 'section',
-        'text': {'type': 'mrkdwn', 'text': '*Context Logs:*\n```$truncated```'},
-      });
-    }
-
-    // Timestamp
-    blocks.add({
-      'type': 'context',
-      'elements': [
-        {
-          'type': 'mrkdwn',
-          'text': 'Occurred at: ${error.timestamp.toIso8601String()}',
-        },
-      ],
-    });
-
-    return {'blocks': blocks};
-  }
 }

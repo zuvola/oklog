@@ -24,7 +24,10 @@ export 'src/processors/context_buffer_processor.dart';
 export 'src/sinks/console_formatter.dart';
 export 'src/sinks/console_sink.dart';
 export 'src/sinks/error_exporter.dart';
+export 'src/sinks/error_formatter.dart';
 export 'src/sinks/error_alert_sink.dart';
+export 'src/sinks/http_error_exporter.dart';
+export 'src/sinks/slack_payload_formatter.dart';
 export 'src/sinks/slack_error_exporter.dart';
 
 /// Global logger instance.
