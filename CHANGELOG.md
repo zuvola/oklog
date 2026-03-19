@@ -1,3 +1,7 @@
+## 1.4.0
+- Refactor `SlackErrorExporter` to use http package for HTTP requests.
+- Add `ErrorFormatter` and `HttpErrorExporter` for flexible error reporting.
+
 ## 1.3.0
 - `ErrorAlertSink` accepts an optional `metadata` parameter (`Map<String, String>`) for attaching common information such as app name, version, and environment to every error report.
 - `SlackErrorExporter` renders metadata as a context block beneath the error header in the Slack notification.
