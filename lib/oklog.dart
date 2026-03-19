@@ -27,8 +27,6 @@ export 'src/sinks/error_exporter.dart';
 export 'src/sinks/error_formatter.dart';
 export 'src/sinks/error_alert_sink.dart';
 export 'src/sinks/http_error_exporter.dart';
-export 'src/sinks/slack_payload_formatter.dart';
-export 'src/sinks/slack_error_exporter.dart';
 
 /// Global logger instance.
 final OkLogger log = OkLogger();

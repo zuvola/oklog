@@ -1,5 +1,5 @@
-import '../core/log_entry.dart';
-import 'error_formatter.dart';
+import '../../core/log_entry.dart';
+import '../../sinks/error_formatter.dart';
 
 /// An [ErrorFormatter] that produces a Slack Block Kit message payload.
 ///

@@ -1,4 +1,5 @@
 import 'package:oklog/oklog.dart';
+import 'package:oklog/oklog_slack.dart';
 
 void main() {
   log.level = LogLevel.trace;

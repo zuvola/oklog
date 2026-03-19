@@ -12,7 +12,8 @@ A simple yet capable logging utility for Dart and Flutter. Just log. ok.
 - Extensible pipeline: add `LogProcessor` instances to transform/filter, and `LogSink` instances to route output
 - Global `log` instance (`OkLogger`) ready to use out of the box
 - Observability support: structured events and metrics via `log.obs`
-- Error alerting with context: `ContextBufferProcessor` + `ErrorAlertSink` + `ErrorExporter`; built-in `SlackErrorExporter` included
+- Error alerting with context: `ContextBufferProcessor` + `ErrorAlertSink` + `ErrorExporter`; composable HTTP transport via `HttpErrorExporter` + `ErrorFormatter`
+- Slack integration: `SlackPayloadFormatter` and `SlackErrorExporter` available via `package:oklog/oklog_slack.dart`
 
 ## Getting started
 
@@ -27,6 +28,12 @@ Then import the library:
 
 ```dart
 import 'package:oklog/oklog.dart';
+```
+
+For Slack integration, add the additional import:
+
+```dart
+import 'package:oklog/oklog_slack.dart';
 ```
 
 ## Usage
@@ -169,12 +176,16 @@ what happened before the error.
 
 #### SlackErrorExporter
 
-The built-in `SlackErrorExporter` sends a formatted [Block Kit](https://api.slack.com/block-kit)
+`SlackErrorExporter` is available via `package:oklog/oklog_slack.dart`.
+It sends a formatted [Block Kit](https://api.slack.com/block-kit)
 message to a Slack channel via an [Incoming Webhook](https://api.slack.com/messaging/webhooks).
 The notification includes the error message, error object, stack trace, and the
 recent context logs captured by `ContextBufferProcessor`.
 
 ```dart
+import 'package:oklog/oklog.dart';
+import 'package:oklog/oklog_slack.dart';
+
 final buffer = ContextBufferProcessor();
 final exporter = SlackErrorExporter(
   'https://hooks.slack.com/services/YOUR/WEBHOOK/URL',
@@ -203,10 +214,73 @@ try {
 }
 ```
 
+Use `extraPayload` to merge additional top-level fields when routing through a
+proxy that requires extra keys alongside `blocks`:
+
+```dart
+final exporter = SlackErrorExporter(
+  'https://proxy.example.com/slack',
+  extraPayload: {
+    'channel': '#alerts',
+    'username': 'ErrorBot',
+    'x-routing-key': 'my-service',
+  },
+);
+```
+
+#### HttpErrorExporter + custom ErrorFormatter
+
+`HttpErrorExporter` is a generic HTTP transport that accepts any `ErrorFormatter`
+implementation. Use it to send structured payloads to any webhook-based service
+without duplicating transport logic.
+
+An optional `payloadTransformer` callback lets you merge extra fields or reshape
+the payload before delivery without subclassing:
+
+```dart
+final exporter = HttpErrorExporter(
+  'https://discord.com/api/webhooks/YOUR/WEBHOOK',
+  DiscordFormatter(),
+  payloadTransformer: (payload) => {...payload, 'username': 'ErrorBot'},
+);
+```
+
+Implement `ErrorFormatter` to control the request body:
+
+```dart
+class DiscordFormatter implements ErrorFormatter {
+  @override
+  Map<String, dynamic> format(
+    LogRecord error,
+    List<LogRecord> contextLogs,
+    Map<String, String> metadata,
+  ) {
+    return {
+      'content': '**${error.className}**: ${error.message}',
+    };
+  }
+}
+
+final exporter = HttpErrorExporter(
+  'https://discord.com/api/webhooks/YOUR/WEBHOOK',
+  DiscordFormatter(),
+);
+
+final buffer = ContextBufferProcessor();
+log.processors.add(buffer);
+log.sinks.add(
+  ErrorAlertSink(
+    buffer,
+    exporter,
+    metadata: {'app': 'MyApp', 'version': '1.0.0'},
+  ),
+);
+```
+
 #### Custom ErrorExporter
 
-Implement the `ErrorExporter` interface to route error reports to any backend
-(Sentry, PagerDuty, a custom REST API, etc.):
+For full control over the transport (non-HTTP, batching, etc.), implement
+`ErrorExporter` directly:
 
 ```dart
 class MyExporter implements ErrorExporter {

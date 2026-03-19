@@ -1,4 +1,4 @@
-import 'http_error_exporter.dart';
+import '../../sinks/http_error_exporter.dart';
 import 'slack_payload_formatter.dart';
 
 /// A convenience [ErrorExporter] that sends error reports to a Slack channel
