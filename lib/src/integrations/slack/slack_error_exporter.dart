@@ -11,33 +11,42 @@ import 'slack_payload_formatter.dart';
 /// To obtain a webhook URL, create an Incoming Webhook in your Slack app
 /// settings: https://api.slack.com/messaging/webhooks
 ///
-/// Use [extraPayload] to merge additional top-level fields into the Slack
-/// webhook payload before delivery. This is useful when routing through a
-/// proxy that requires extra keys (e.g. `channel`, `username`, a routing
-/// token, etc.):
+/// Use [payloadBuilder] to merge dynamic top-level fields into the Slack
+/// webhook payload, or [headersBuilder] to inject dynamic HTTP headers on
+/// every send. Both are useful when routing through a proxy that requires
+/// extra keys or authentication:
 ///
 /// ```dart
 /// final exporter = SlackErrorExporter(
 ///   'https://proxy.example.com/slack',
-///   extraPayload: {
+///   payloadBuilder: () => {
 ///     'channel': '#alerts',
 ///     'username': 'ErrorBot',
-///     'x-routing-key': 'my-service',
+///   },
+///   headersBuilder: () => {
+///     'Authorization': 'Bearer ${tokenProvider.current}',
+///     'X-Routing-Key': 'my-service',
 ///   },
 /// );
 /// ```
 class SlackErrorExporter extends HttpErrorExporter {
   /// Creates a [SlackErrorExporter] that posts to the given [webhookUrl].
   ///
-  /// [extraPayload] — optional map of additional top-level fields merged into
-  /// the Slack Block Kit payload before each send. Intended for proxy setups
-  /// that require routing or authentication fields alongside `blocks`.
-  SlackErrorExporter(String webhookUrl, {Map<String, dynamic>? extraPayload})
-    : super(
-        webhookUrl,
-        SlackPayloadFormatter(),
-        payloadTransformer: extraPayload != null
-            ? (payload) => {...payload, ...extraPayload}
-            : null,
-      );
+  /// [payloadBuilder] — optional callback invoked on every send whose return
+  /// value is merged into the Slack Block Kit payload.
+  ///
+  /// [headersBuilder] — optional callback invoked on every send whose return
+  /// value is merged into the HTTP request headers.
+  SlackErrorExporter(
+    String webhookUrl, {
+    Map<String, dynamic> Function()? payloadBuilder,
+    Map<String, String> Function()? headersBuilder,
+  }) : super(
+         webhookUrl,
+         SlackPayloadFormatter(),
+         payloadBuilder: payloadBuilder != null
+             ? (payload) => {...payload, ...payloadBuilder()}
+             : null,
+         headersBuilder: headersBuilder,
+       );
 }

@@ -214,16 +214,20 @@ try {
 }
 ```
 
-Use `extraPayload` to merge additional top-level fields when routing through a
-proxy that requires extra keys alongside `blocks`:
+Use `payloadBuilder` to merge dynamic top-level fields into the payload on
+every send, or `headersBuilder` to inject dynamic HTTP headers (e.g. auth
+tokens, routing keys) when going through a proxy:
 
 ```dart
 final exporter = SlackErrorExporter(
   'https://proxy.example.com/slack',
-  extraPayload: {
+  payloadBuilder: () => {
     'channel': '#alerts',
     'username': 'ErrorBot',
-    'x-routing-key': 'my-service',
+  },
+  headersBuilder: () => {
+    'Authorization': 'Bearer ${tokenProvider.current}',
+    'X-Routing-Key': 'my-service',
   },
 );
 ```
@@ -234,14 +238,16 @@ final exporter = SlackErrorExporter(
 implementation. Use it to send structured payloads to any webhook-based service
 without duplicating transport logic.
 
-An optional `payloadTransformer` callback lets you merge extra fields or reshape
-the payload before delivery without subclassing:
+An optional `payloadBuilder` callback lets you merge extra fields or reshape
+the payload before delivery without subclassing. An optional `headersBuilder`
+callback lets you inject dynamic HTTP headers (e.g. auth tokens) on every send:
 
 ```dart
 final exporter = HttpErrorExporter(
   'https://discord.com/api/webhooks/YOUR/WEBHOOK',
   DiscordFormatter(),
-  payloadTransformer: (payload) => {...payload, 'username': 'ErrorBot'},
+  payloadBuilder: (payload) => {...payload, 'username': 'ErrorBot'},
+  headersBuilder: () => {'Authorization': 'Bearer $token'},
 );
 ```
 

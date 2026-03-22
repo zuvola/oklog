@@ -29,9 +29,20 @@ class HttpErrorExporter implements ErrorExporter {
   /// Receives the map produced by [formatter] and must return the final map
   /// to be JSON-encoded and sent. Use this to merge extra fields or reshape
   /// the payload without subclassing.
-  final Map<String, dynamic> Function(Map<String, dynamic>)? payloadTransformer;
+  final Map<String, dynamic> Function(Map<String, dynamic>)? payloadBuilder;
 
-  HttpErrorExporter(this.url, this.formatter, {this.payloadTransformer});
+  /// Optional callback invoked on every send to supply additional HTTP headers.
+  ///
+  /// The returned map is merged into the default headers (`Content-Type`).
+  /// Use this to inject dynamic values such as auth tokens or routing keys.
+  final Map<String, String> Function()? headersBuilder;
+
+  HttpErrorExporter(
+    this.url,
+    this.formatter, {
+    this.payloadBuilder,
+    this.headersBuilder,
+  });
 
   @override
   Future<void> send(
@@ -40,14 +51,14 @@ class HttpErrorExporter implements ErrorExporter {
     Map<String, String> metadata,
   ) async {
     var payload = formatter.format(error, contextLogs, metadata);
-    if (payloadTransformer != null) payload = payloadTransformer!(payload);
+    if (payloadBuilder != null) payload = payloadBuilder!(payload);
     final uri = Uri.parse(url);
+    final headers = {
+      'Content-Type': 'application/json',
+      ...?headersBuilder?.call(),
+    };
     try {
-      await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+      await http.post(uri, headers: headers, body: jsonEncode(payload));
     } catch (e) {
       // Errors during delivery must not propagate and crash the application.
       print('Failed to send error report to $url: $e');
