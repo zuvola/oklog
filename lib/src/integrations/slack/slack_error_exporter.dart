@@ -1,6 +1,14 @@
 import '../../sinks/http_error_exporter.dart';
 import 'slack_payload_formatter.dart';
 
+/// Placeholder URL used in template code and examples.
+///
+/// If a [SlackErrorExporter] is constructed with this value, it is
+/// automatically replaced by [HttpErrorExporter.demoUrl] so the
+/// payload is printed to the console instead of making a real HTTP request.
+const _slackPlaceholderUrl =
+    'https://hooks.slack.com/services/YOUR/WEBHOOK/URL';
+
 /// A convenience [ErrorExporter] that sends error reports to a Slack channel
 /// via an Incoming Webhook URL.
 ///
@@ -42,7 +50,11 @@ class SlackErrorExporter extends HttpErrorExporter {
     Map<String, dynamic> Function()? payloadBuilder,
     Map<String, String> Function()? headersBuilder,
   }) : super(
-         webhookUrl,
+         // Replace the template placeholder with the demo URL so users can
+         // run the example code without a real Slack webhook.
+         webhookUrl == _slackPlaceholderUrl
+             ? HttpErrorExporter.demoUrl
+             : webhookUrl,
          SlackPayloadFormatter(),
          payloadBuilder: payloadBuilder != null
              ? (payload) => {...payload, ...payloadBuilder()}

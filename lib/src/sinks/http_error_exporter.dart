@@ -18,6 +18,12 @@ import 'error_formatter.dart';
 /// );
 /// ```
 class HttpErrorExporter implements ErrorExporter {
+  /// A sentinel URL for demo/development mode.
+  ///
+  /// When [url] is set to this value, payloads are printed to the console
+  /// instead of being sent over the network.
+  static const String demoUrl = 'https://demo.oklog.local/error-report';
+
   /// The URL to POST the formatted payload to.
   final String url;
 
@@ -52,6 +58,11 @@ class HttpErrorExporter implements ErrorExporter {
   ) async {
     var payload = formatter.format(error, contextLogs, metadata);
     if (payloadBuilder != null) payload = payloadBuilder!(payload);
+    if (url == demoUrl) {
+      // Demo mode: print the formatted payload to the console.
+      print('[HttpErrorExporter demo] ${jsonEncode(payload)}');
+      return;
+    }
     final uri = Uri.parse(url);
     final headers = {
       'Content-Type': 'application/json',
