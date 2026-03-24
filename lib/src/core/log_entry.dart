@@ -13,6 +13,9 @@ sealed class LogEntry {
     : className = resolveClassName(source),
       timestamp = DateTime.now();
 
+  /// Internal constructor that preserves an existing [className] and [timestamp].
+  LogEntry._copy(this.className, this.timestamp);
+
   /// Resolves a log source to a class name string.
   /// Accepts a [String] (used as-is), a [Type], or any object (uses runtimeType).
   static String resolveClassName(Object source) {
@@ -42,6 +45,18 @@ final class LogRecord extends LogEntry {
     this.stackTrace,
     this.attrs,
   ]);
+
+  /// Returns a copy of this record with [attrs] replaced, preserving all
+  /// other fields including [timestamp].
+  LogRecord copyWithAttrs(Map<String, Object>? attrs) =>
+      LogRecord._copy(this, attrs);
+
+  LogRecord._copy(LogRecord original, this.attrs)
+    : level = original.level,
+      message = original.message,
+      error = original.error,
+      stackTrace = original.stackTrace,
+      super._copy(original.className, original.timestamp);
 }
 
 /// A structured observability event.

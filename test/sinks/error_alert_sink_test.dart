@@ -159,5 +159,68 @@ void main() {
 
       expect(exporter.callCount, 3);
     });
+
+    // -------------------------------------------------------------------------
+    // PII masking
+    // -------------------------------------------------------------------------
+    test('masks PiiValue attrs in the error record before exporting', () async {
+      final record = LogRecord(
+        'AuthService',
+        LogLevel.error,
+        'login failed',
+        null,
+        null,
+        {'email': pii('user@example.com'), 'session_id': 'abc123'},
+      );
+      sink.emit(record);
+      await Future.microtask(() {});
+
+      final received = exporter.calls.first.error;
+      expect(received.attrs!['email'], '[REDACTED]');
+      expect(received.attrs!['session_id'], 'abc123');
+    });
+
+    test('masks PiiValue attrs in context logs before exporting', () async {
+      final ctx = LogRecord(
+        'AuthService',
+        LogLevel.info,
+        'attempt',
+        null,
+        null,
+        {'user': pii('alice')},
+      );
+      buffer.process(ctx);
+
+      sink.emit(LogRecord('AuthService', LogLevel.error, 'boom'));
+      await Future.microtask(() {});
+
+      final contextLog = exporter.calls.first.context.first;
+      expect(contextLog.attrs!['user'], '[REDACTED]');
+    });
+
+    test('passes records without PII attrs through unchanged', () async {
+      final record = LogRecord('Service', LogLevel.error, 'crash', null, null, {
+        'request_id': 'xyz',
+      });
+      sink.emit(record);
+      await Future.microtask(() {});
+
+      expect(identical(exporter.calls.first.error, record), isTrue);
+    });
+
+    test('preserves timestamp when masking PII', () async {
+      final record = LogRecord(
+        'AuthService',
+        LogLevel.error,
+        'fail',
+        null,
+        null,
+        {'email': pii('a@b.com')},
+      );
+      sink.emit(record);
+      await Future.microtask(() {});
+
+      expect(exporter.calls.first.error.timestamp, equals(record.timestamp));
+    });
   });
 }

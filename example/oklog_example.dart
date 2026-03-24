@@ -44,6 +44,7 @@ void main() {
 
   log.info('main', 'Application started.');
   log.warn('main', 'Cache miss — fetching from origin.');
+  log.info('main', 'User login attempt', attrs: {'userId': pii('user123')});
   try {
     throw Exception('Database connection failed');
   } catch (e, st) {

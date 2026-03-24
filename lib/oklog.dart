@@ -14,6 +14,7 @@ export 'src/core/log_sink.dart';
 export 'src/core/log_formatter.dart';
 export 'src/core/logger.dart';
 export 'src/core/ok_logger.dart';
+export 'src/core/pii_value.dart';
 
 // Processors
 export 'src/processors/level_filter_processor.dart';

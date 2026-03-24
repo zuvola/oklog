@@ -1,5 +1,6 @@
 import '../core/log_entry.dart';
 import '../core/log_sink.dart';
+import '../core/pii_value.dart';
 import '../processors/context_buffer_processor.dart';
 import 'error_exporter.dart';
 
@@ -40,6 +41,19 @@ class ErrorAlertSink extends LogSink {
   @override
   void emit(LogEntry entry) {
     if (entry is! LogRecord || entry.level != LogLevel.error) return;
-    exporter.send(entry, buffer.getRecent(), metadata);
+    exporter.send(
+      _redacted(entry),
+      buffer.getRecent().map(_redacted).toList(),
+      metadata,
+    );
+  }
+
+  /// Returns [r] unchanged if it has no PII attrs; otherwise returns a copy
+  /// with all [PiiValue] entries replaced by a redaction marker.
+  LogRecord _redacted(LogRecord r) {
+    if (r.attrs == null || !r.attrs!.values.any((v) => v is PiiValue)) {
+      return r;
+    }
+    return r.copyWithAttrs(maskPiiAttrs(r.attrs));
   }
 }

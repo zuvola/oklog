@@ -14,6 +14,7 @@ A simple yet capable logging utility for Dart and Flutter. Just log. ok.
 - Observability support: structured events and metrics via `log.obs`
 - Error alerting with context: `ContextBufferProcessor` + `ErrorAlertSink` + `ErrorExporter`; composable HTTP transport via `HttpErrorExporter` + `ErrorFormatter`
 - Slack integration: `SlackPayloadFormatter` and `SlackErrorExporter` available via `package:oklog/oklog_slack.dart`
+- PII (Personally Identifiable Information) support: mark sensitive values with `pii()` at the call site; each sink handles masking independently
 
 ## Getting started
 
@@ -79,6 +80,31 @@ All log methods accept an optional `attrs` map for structured key-value metadata
 ```dart
 log.debug(this, 'User action', attrs: {'userId': 123, 'action': 'login'});
 ```
+
+### PII (Personally Identifiable Information)
+
+Wrap sensitive values with `pii()` to mark them as personally identifiable
+information. Each sink decides independently how to handle `PiiValue` entries:
+
+- **`ConsoleSink`** — reveals the raw value (safe for local development).
+- **`ErrorAlertSink`** — replaces every `PiiValue` with `[REDACTED]` before
+  forwarding to the `ErrorExporter`, so sensitive data never leaves the device
+  in error reports.
+
+```dart
+log.info(
+  this,
+  'login',
+  attrs: {
+    'email': pii(email),       // PII — masked in error exports
+    'session_id': sessionId,   // non-PII — forwarded as-is
+  },
+);
+```
+
+`Logger` itself is PII-agnostic. Masking is a per-sink concern, so you can add
+your own custom sinks that call `maskPiiAttrs(entry.attrs)` (or ignore `PiiValue`
+entirely) depending on the destination.
 
 ### Filtering by class name
 
