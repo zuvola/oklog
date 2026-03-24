@@ -1,3 +1,6 @@
+## 1.6.0
+- Add PII support and demo URL functionality.
+
 ## 1.5.0
 - `SlackErrorExporter`: replaced `extraPayload` with `payloadBuilder` (`Map<String, dynamic> Function()?`) for dynamic per-send payload merging.
 - `SlackErrorExporter`: added `headersBuilder` (`Map<String, String> Function()?`) to inject dynamic HTTP headers on every send.

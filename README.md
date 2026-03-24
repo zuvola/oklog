@@ -409,3 +409,174 @@ Console output:
 | `notice` | Notable events worth highlighting  |
 | `warn`   | Warnings with optional error/stack |
 | `error`  | Errors with error object and stack |
+
+## Class diagram
+
+```mermaid
+classDiagram
+    %% Core
+    class LogEntry {
+        +String className
+        +DateTime timestamp
+        +LogEntry(Object source)
+        +resolveClassName(Object source) String
+    }
+    class LogRecord {
+        +LogLevel level
+        +String message
+        +Object? error
+        +StackTrace? stackTrace
+        +Map~String,Object~? attrs
+        +copyWithAttrs(Map~String,Object~?) LogRecord
+    }
+    class EventEntry {
+        +String message
+        +Map~String,dynamic~? data
+        +Map~String,Object~? attrs
+    }
+    class MetricEntry {
+        +String name
+        +num value
+        +String? unit
+        +Map~String,Object~? attrs
+    }
+    class LogLevel {
+        <<enumeration>>
+        trace
+        debug
+        info
+        notice
+        warn
+        error
+    }
+
+    LogEntry <|-- LogRecord
+    LogEntry <|-- EventEntry
+    LogEntry <|-- MetricEntry
+    LogRecord --> LogLevel
+
+    %% PII
+    class PiiValue~T~ {
+        +T value
+        +toString() String
+    }
+    class pii~T~ {
+        <<function>>
+        pii(T value) PiiValue~T~
+    }
+    class maskPiiAttrs {
+        <<function>>
+        maskPiiAttrs(Map?, String) Map?
+    }
+    LogRecord ..> PiiValue : attrs may contain
+
+    %% Pipeline
+    class Logger {
+        +List~LogProcessor~ processors
+        +List~LogSink~ sinks
+        +emit(LogEntry) Future~void~
+        +trace(Object, String, attrs?)
+        +debug(Object, String, attrs?)
+        +info(Object, String, attrs?)
+        +notice(Object, String, attrs?)
+        +warn(Object, String, error?, stackTrace?, attrs?)
+        +error(Object, String, error?, stackTrace?, attrs?)
+        +obs ObservabilityLogger
+    }
+    class OkLogger {
+        +LogLevel level
+        +NameFilterProcessor nameFilter
+    }
+    class ObservabilityLogger {
+        +event(Object, String, data?, attrs?)
+        +metric(Object, String, num, unit?, attrs?)
+    }
+
+    Logger <|-- OkLogger
+    Logger --> ObservabilityLogger : creates
+
+    %% Processors
+    class LogProcessor {
+        <<abstract>>
+        +process(LogEntry) bool
+    }
+    class LevelFilterProcessor {
+        +LogLevel minLevel
+        +process(LogEntry) bool
+    }
+    class NameFilterProcessor {
+        +List~String~ denyList
+        +List~String~ allowList
+        +process(LogEntry) bool
+    }
+    class ContextBufferProcessor {
+        +int capacity
+        +process(LogEntry) bool
+        +getRecent() List~LogRecord~
+    }
+
+    LogProcessor <|.. LevelFilterProcessor
+    LogProcessor <|.. NameFilterProcessor
+    LogProcessor <|.. ContextBufferProcessor
+    Logger o-- LogProcessor
+
+    %% Sinks
+    class LogSink {
+        <<abstract>>
+        +emit(LogEntry)
+    }
+    class ConsoleSink {
+        +LogFormatter~String~ formatter
+        +emit(LogEntry)
+    }
+    class ConsoleFormatter {
+        +format(LogEntry) String
+    }
+    class LogFormatter~T~ {
+        <<abstract>>
+        +format(LogEntry) T
+    }
+    class ErrorAlertSink {
+        +ContextBufferProcessor buffer
+        +ErrorExporter exporter
+        +Map~String,String~ metadata
+        +emit(LogEntry)
+    }
+    class ErrorExporter {
+        <<abstract>>
+        +send(LogRecord, List~LogRecord~, Map~String,String~) Future~void~
+    }
+    class ErrorFormatter {
+        <<abstract>>
+        +format(LogRecord, List~LogRecord~, Map~String,String~) Map~String,dynamic~
+    }
+    class HttpErrorExporter {
+        +String url
+        +ErrorFormatter formatter
+        +send(LogRecord, List~LogRecord~, Map~String,String~) Future~void~
+    }
+
+    LogSink <|.. ConsoleSink
+    LogSink <|.. ErrorAlertSink
+    LogFormatter <|.. ConsoleFormatter
+    ConsoleSink --> LogFormatter
+    ErrorAlertSink --> ContextBufferProcessor
+    ErrorAlertSink --> ErrorExporter
+    ErrorAlertSink ..> maskPiiAttrs : uses
+    ErrorExporter <|.. HttpErrorExporter
+    HttpErrorExporter --> ErrorFormatter
+    Logger o-- LogSink
+
+    %% Slack integration
+    class SlackPayloadFormatter {
+        +format(LogRecord, List~LogRecord~, Map~String,String~) Map~String,dynamic~
+    }
+    class SlackErrorExporter {
+        +String webhookUrl
+    }
+
+    ErrorFormatter <|.. SlackPayloadFormatter
+    ErrorExporter <|.. SlackErrorExporter
+    SlackErrorExporter --> SlackPayloadFormatter
+```
+
