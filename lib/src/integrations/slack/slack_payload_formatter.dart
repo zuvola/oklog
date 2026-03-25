@@ -30,7 +30,7 @@ class SlackPayloadFormatter implements ErrorFormatter {
       'type': 'header',
       'text': {
         'type': 'plain_text',
-        'text': ':rotating_light: Error: ${error.className}',
+        'text': '${_icons[error.level.index]} Error: ${error.className}',
       },
     });
 
@@ -89,6 +89,7 @@ class SlackPayloadFormatter implements ErrorFormatter {
           .map((r) {
             final base =
                 '[${r.timestamp.toIso8601String()}]'
+                ' ${_icons[r.level.index]}'
                 ' [${r.level.name.toUpperCase()}]'
                 ' ${r.className}: ${r.message}';
             if (r.attrs == null || r.attrs!.isEmpty) return base;
@@ -120,4 +121,7 @@ class SlackPayloadFormatter implements ErrorFormatter {
 
     return {'blocks': blocks};
   }
+
+  /// Emoji icons corresponding to each [LogLevel] (trace, debug, info, notice, warn, error).
+  static const _icons = ['🐾', '🛠️', '💬', '🔔', '⚠️', '❌'];
 }

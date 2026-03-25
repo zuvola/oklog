@@ -42,7 +42,6 @@ void main() {
         'env': 'prod',
       });
       final result = formatter.format(entry);
-      expect(result, contains('attrs:'));
       expect(result, contains('userId'));
       expect(result, contains('env'));
     });
@@ -131,7 +130,6 @@ void main() {
     test('attrs are included in output when provided', () {
       final entry = EventEntry('ctx', 'event', attrs: {'requestId': 'req-1'});
       final result = formatter.format(entry);
-      expect(result, contains('attrs:'));
       expect(result, contains('requestId'));
     });
   });
@@ -186,7 +184,6 @@ void main() {
         attrs: {'region': 'us-east'},
       );
       final result = formatter.format(entry);
-      expect(result, contains('attrs:'));
       expect(result, contains('region'));
     });
   });

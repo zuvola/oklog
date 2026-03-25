@@ -24,7 +24,7 @@ class ConsoleFormatter extends LogFormatter<String> {
 
   String _formatRecord(String dateString, LogRecord entry) {
     final messageString = _colorString(
-      '${entry.className}: ${entry.message}',
+      '${entry.className}: ${entry.message.replaceAll('\n', ' ')}',
       _colors[entry.level.index],
       false,
     );
@@ -33,14 +33,18 @@ class ConsoleFormatter extends LogFormatter<String> {
     );
     if (entry.attrs != null && entry.attrs!.isNotEmpty) {
       buffer.write(
-        '\n${_colorString(' : ${entry.attrs}', _colors[entry.level.index], false)}',
+        _colorString(
+          ' : ${entry.attrs}',
+          _colors[entry.level.index],
+          false,
+        ).replaceAll('\n', ' '),
       );
     }
     if (entry.error != null || entry.stackTrace != null) {
       buffer.write('\n${_colorString('Error: ${entry.error}', 166, false)}');
       if (entry.stackTrace != null) buffer.write('\n${entry.stackTrace}');
     }
-    return buffer.toString().replaceAll('\n', ' ');
+    return buffer.toString();
   }
 
   String _formatEvent(String dateString, EventEntry entry) {

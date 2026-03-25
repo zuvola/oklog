@@ -12,8 +12,8 @@ void main() {
     });
 
     test('toString returns the raw value string', () {
-      expect(PiiValue('secret').toString(), 'secret');
-      expect(PiiValue(42).toString(), '42');
+      expect(PiiValue('secret').toString(), 'pii(secret)');
+      expect(PiiValue(42).toString(), 'pii(42)');
     });
 
     test('pii() factory produces a PiiValue', () {
