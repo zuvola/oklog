@@ -29,6 +29,17 @@ void main() {
       }
     });
 
+    test('output contains the log level label for each level', () {
+      for (final level in LogLevel.values) {
+        final entry = LogRecord('ctx', level, 'msg');
+        expect(
+          formatter.format(entry),
+          contains('[${level.name.toUpperCase()}]'),
+          reason: 'Expected label for $level',
+        );
+      }
+    });
+
     test('multiline message has newlines replaced with spaces', () {
       final entry = LogRecord('ctx', LogLevel.info, 'line1\nline2\nline3');
       final result = formatter.format(entry);

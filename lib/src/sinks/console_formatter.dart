@@ -23,13 +23,18 @@ class ConsoleFormatter extends LogFormatter<String> {
   }
 
   String _formatRecord(String dateString, LogRecord entry) {
+    final levelString = _colorString(
+      '[${entry.level.name.toUpperCase()}]',
+      _colors[entry.level.index],
+      false,
+    );
     final messageString = _colorString(
       '${entry.className}: ${entry.message.replaceAll('\n', ' ')}',
       _colors[entry.level.index],
       false,
     );
     final buffer = StringBuffer(
-      '$dateString ${_icons[entry.level.index]} $messageString',
+      '$dateString ${_icons[entry.level.index]} $levelString $messageString',
     );
     if (entry.attrs != null && entry.attrs!.isNotEmpty) {
       buffer.write(
