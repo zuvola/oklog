@@ -1,3 +1,7 @@
+## 1.7.0
+- `ConsoleFormatter`: log level label (e.g. `[INFO]`) is now included in the output alongside the emoji icon.
+- `SlackPayloadFormatter`: emoji icon and log level label (e.g. `[INFO]`) are now included in context log lines.
+
 ## 1.6.0
 - Add PII support and demo URL functionality.
 

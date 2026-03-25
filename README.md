@@ -7,7 +7,7 @@ A simple yet capable logging utility for Dart and Flutter. Just log. ok.
 ## Features
 
 - Six log levels: `trace`, `debug`, `info`, `notice`, `warn`, `error`
-- Colored, emoji-decorated console output via `ConsoleSink` and `ConsoleFormatter`
+- Colored, emoji-decorated console output with level labels (e.g. `[INFO]`) via `ConsoleSink` and `ConsoleFormatter`
 - Filter logs by level via `LevelFilterProcessor` and by class name via `NameFilterProcessor`
 - Extensible pipeline: add `LogProcessor` instances to transform/filter, and `LogSink` instances to route output
 - Global `log` instance (`OkLogger`) ready to use out of the box
@@ -365,7 +365,7 @@ log.obs.event(
 
 Console output:
 ```
-[2026-03-13 10:00:00.000] 📡 [EVENT] MyClass: user_signed_in : {userId: 42, plan: pro} attrs: {env: prod}
+[2026-03-13 10:00:00.000] 📡 [EVENT] MyClass: user_signed_in : {userId: 42, plan: pro} : {env: prod}
 ```
 
 ### log.obs.metric
@@ -384,7 +384,7 @@ log.obs.metric(
 
 Console output:
 ```
-[2026-03-13 10:00:00.000] 📊 [METRIC] MyClass: request_duration : 142 [ms] attrs: {endpoint: /api/login}
+[2026-03-13 10:00:00.000] 📊 [METRIC] MyClass: request_duration : 142 [ms] : {endpoint: /api/login}
 ```
 
 ### Parameter reference

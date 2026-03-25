@@ -30,7 +30,7 @@ class SlackPayloadFormatter implements ErrorFormatter {
       'type': 'header',
       'text': {
         'type': 'plain_text',
-        'text': '${_icons[error.level.index]} Error: ${error.className}',
+        'text': ':rotating_light: Error: ${error.className}',
       },
     });
 

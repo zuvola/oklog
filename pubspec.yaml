@@ -1,6 +1,6 @@
 name: oklog
 description: A simple yet capable logging utility for Dart and Flutter. Just log. ok.
-version: 1.6.0
+version: 1.7.0
 repository: https://github.com/zuvola/oklog
 
 environment:
