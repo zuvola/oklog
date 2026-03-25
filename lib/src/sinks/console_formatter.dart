@@ -23,9 +23,8 @@ class ConsoleFormatter extends LogFormatter<String> {
   }
 
   String _formatRecord(String dateString, LogRecord entry) {
-    final msg = entry.message.replaceAll('\n', ' ');
     final messageString = _colorString(
-      '${entry.className}: $msg',
+      '${entry.className}: ${entry.message}',
       _colors[entry.level.index],
       false,
     );
@@ -34,14 +33,14 @@ class ConsoleFormatter extends LogFormatter<String> {
     );
     if (entry.attrs != null && entry.attrs!.isNotEmpty) {
       buffer.write(
-        '\n${_colorString('attrs: ${entry.attrs}', _colors[entry.level.index], false)}',
+        '\n${_colorString(' : ${entry.attrs}', _colors[entry.level.index], false)}',
       );
     }
     if (entry.error != null || entry.stackTrace != null) {
       buffer.write('\n${_colorString('Error: ${entry.error}', 166, false)}');
       if (entry.stackTrace != null) buffer.write('\n${entry.stackTrace}');
     }
-    return buffer.toString();
+    return buffer.toString().replaceAll('\n', ' ');
   }
 
   String _formatEvent(String dateString, EventEntry entry) {
@@ -50,7 +49,7 @@ class ConsoleFormatter extends LogFormatter<String> {
       buffer.write(' : ${entry.data}');
     }
     if (entry.attrs != null && entry.attrs!.isNotEmpty) {
-      buffer.write(' attrs: ${entry.attrs}');
+      buffer.write(' : ${entry.attrs}');
     }
     return '$dateString 📡 ${_colorString(buffer.toString(), 13, false)}';
   }
@@ -63,7 +62,7 @@ class ConsoleFormatter extends LogFormatter<String> {
       buffer.write(' [${entry.unit}]');
     }
     if (entry.attrs != null && entry.attrs!.isNotEmpty) {
-      buffer.write(' attrs: ${entry.attrs}');
+      buffer.write(' : ${entry.attrs}');
     }
     return '$dateString 📊 ${_colorString(buffer.toString(), 45, false)}';
   }

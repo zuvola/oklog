@@ -45,6 +45,17 @@ void main() {
   log.info('main', 'Application started.');
   log.warn('main', 'Cache miss — fetching from origin.');
   log.info('main', 'User login attempt', attrs: {'userId': pii('user123')});
+  log.debug(
+    'main',
+    'This is a debug message with attrs.',
+    attrs: {
+      'userId': 123,
+      'action': 'login',
+      'nullValue': null,
+      'description':
+          'User logged in successfully\nwith multiple lines in the message.',
+    },
+  );
   try {
     throw Exception('Database connection failed');
   } catch (e, st) {
@@ -65,7 +76,13 @@ class MyClass {
     log.debug(
       this,
       'This is a debug message with attrs.',
-      attrs: {'userId': 123, 'action': 'login'},
+      attrs: {
+        'userId': 123,
+        'action': 'login',
+        'nullValue': null,
+        'description':
+            'User logged in successfully\nwith multiple lines in the message.',
+      },
     );
 
     log.obs.event(

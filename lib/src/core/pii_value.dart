@@ -12,7 +12,7 @@ class PiiValue<T extends Object> {
 
   /// Returns the raw string representation of the wrapped value.
   @override
-  String toString() => value.toString();
+  String toString() => 'pii(${value.toString()})';
 }
 
 /// Marks [value] as PII so sinks can handle it appropriately.
@@ -25,8 +25,8 @@ PiiValue<T> pii<T extends Object>(T value) => PiiValue(value);
 /// Returns a copy of [attrs] with every [PiiValue] replaced by [mask].
 ///
 /// Returns `null` when [attrs] is `null`.
-Map<String, Object>? maskPiiAttrs(
-  Map<String, Object>? attrs, [
+Map<String, Object?>? maskPiiAttrs(
+  Map<String, Object?>? attrs, [
   String mask = '[REDACTED]',
 ]) {
   if (attrs == null) return null;

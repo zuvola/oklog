@@ -57,7 +57,8 @@ class SlackPayloadFormatter implements ErrorFormatter {
     if (error.attrs != null && error.attrs!.isNotEmpty) {
       final attrsText = error.attrs!.entries
           .map((e) => '${e.key}: ${e.value}')
-          .join('  |  ');
+          .join('  |  ')
+          .replaceAll('\n', ' ');
       blocks.add({
         'type': 'section',
         'text': {'type': 'mrkdwn', 'text': '*Attrs:* $attrsText'},
@@ -94,7 +95,7 @@ class SlackPayloadFormatter implements ErrorFormatter {
             final attrsText = r.attrs!.entries
                 .map((e) => '${e.key}: ${e.value}')
                 .join(', ');
-            return '$base  {$attrsText}';
+            return '$base  {$attrsText}'.replaceAll('\n', ' ');
           })
           .join('\n');
       final truncated = contextText.length > 2000

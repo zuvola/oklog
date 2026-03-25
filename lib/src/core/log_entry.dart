@@ -35,7 +35,7 @@ final class LogRecord extends LogEntry {
   final String message;
   final Object? error;
   final StackTrace? stackTrace;
-  final Map<String, Object>? attrs;
+  final Map<String, Object?>? attrs;
 
   LogRecord(
     super.className,
@@ -48,7 +48,7 @@ final class LogRecord extends LogEntry {
 
   /// Returns a copy of this record with [attrs] replaced, preserving all
   /// other fields including [timestamp].
-  LogRecord copyWithAttrs(Map<String, Object>? attrs) =>
+  LogRecord copyWithAttrs(Map<String, Object?>? attrs) =>
       LogRecord._copy(this, attrs);
 
   LogRecord._copy(LogRecord original, this.attrs)
@@ -63,7 +63,7 @@ final class LogRecord extends LogEntry {
 final class EventEntry extends LogEntry {
   final String message;
   final Map<String, dynamic>? data;
-  final Map<String, Object>? attrs;
+  final Map<String, Object?>? attrs;
 
   EventEntry(super.className, this.message, {this.data, this.attrs});
 }
@@ -73,7 +73,7 @@ final class MetricEntry extends LogEntry {
   final String name;
   final num value;
   final String? unit;
-  final Map<String, Object>? attrs;
+  final Map<String, Object?>? attrs;
 
   MetricEntry(super.className, this.name, this.value, {this.unit, this.attrs});
 }

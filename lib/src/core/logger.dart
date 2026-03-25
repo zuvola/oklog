@@ -41,22 +41,22 @@ class Logger {
   ObservabilityLogger get obs => _obs ??= ObservabilityLogger(this);
 
   /// Logs a trace-level message for [source].
-  void trace(Object source, String message, {Map<String, Object>? attrs}) {
+  void trace(Object source, String message, {Map<String, Object?>? attrs}) {
     emit(LogRecord(source, LogLevel.trace, message, null, null, attrs));
   }
 
   /// Logs a debug-level message for [source].
-  void debug(Object source, String message, {Map<String, Object>? attrs}) {
+  void debug(Object source, String message, {Map<String, Object?>? attrs}) {
     emit(LogRecord(source, LogLevel.debug, message, null, null, attrs));
   }
 
   /// Logs an info-level message for [source].
-  void info(Object source, String message, {Map<String, Object>? attrs}) {
+  void info(Object source, String message, {Map<String, Object?>? attrs}) {
     emit(LogRecord(source, LogLevel.info, message, null, null, attrs));
   }
 
   /// Logs a notice-level message for [source].
-  void notice(Object source, String message, {Map<String, Object>? attrs}) {
+  void notice(Object source, String message, {Map<String, Object?>? attrs}) {
     emit(LogRecord(source, LogLevel.notice, message, null, null, attrs));
   }
 
@@ -66,7 +66,7 @@ class Logger {
     String message, {
     Object? error,
     StackTrace? stackTrace,
-    Map<String, Object>? attrs,
+    Map<String, Object?>? attrs,
   }) {
     emit(LogRecord(source, LogLevel.warn, message, error, stackTrace, attrs));
   }
@@ -77,7 +77,7 @@ class Logger {
     String message, {
     Object? error,
     StackTrace? stackTrace,
-    Map<String, Object>? attrs,
+    Map<String, Object?>? attrs,
   }) {
     emit(LogRecord(source, LogLevel.error, message, error, stackTrace, attrs));
   }
@@ -104,7 +104,7 @@ class ObservabilityLogger {
     Object source,
     String message, {
     Map<String, dynamic>? data,
-    Map<String, Object>? attrs,
+    Map<String, Object?>? attrs,
   }) {
     _logger.emit(EventEntry(source, message, data: data, attrs: attrs));
   }
@@ -122,7 +122,7 @@ class ObservabilityLogger {
     String name,
     num value, {
     String? unit,
-    Map<String, Object>? attrs,
+    Map<String, Object?>? attrs,
   }) {
     _logger.emit(MetricEntry(source, name, value, unit: unit, attrs: attrs));
   }
