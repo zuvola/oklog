@@ -43,11 +43,18 @@ class HttpErrorExporter implements ErrorExporter {
   /// Use this to inject dynamic values such as auth tokens or routing keys.
   final Map<String, String> Function()? headersBuilder;
 
+  /// Optional callback invoked before sending the payload.
+  ///
+  /// Receives the final payload. If it returns `false`, the sending process
+  /// is cancelled. This is useful for showing a confirmation dialog to the user.
+  final Future<bool> Function(Map<String, dynamic>)? onBeforeSend;
+
   HttpErrorExporter(
     this.url,
     this.formatter, {
     this.payloadBuilder,
     this.headersBuilder,
+    this.onBeforeSend,
   });
 
   @override
@@ -58,6 +65,12 @@ class HttpErrorExporter implements ErrorExporter {
   ) async {
     var payload = formatter.format(error, contextLogs, metadata);
     if (payloadBuilder != null) payload = payloadBuilder!(payload);
+
+    if (onBeforeSend != null) {
+      final shouldSend = await onBeforeSend!(payload);
+      if (!shouldSend) return;
+    }
+
     if (url == demoUrl) {
       // Demo mode: print the formatted payload to the console.
       print('[HttpErrorExporter demo] ${jsonEncode(payload)}');

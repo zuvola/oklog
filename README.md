@@ -266,7 +266,9 @@ without duplicating transport logic.
 
 An optional `payloadBuilder` callback lets you merge extra fields or reshape
 the payload before delivery without subclassing. An optional `headersBuilder`
-callback lets you inject dynamic HTTP headers (e.g. auth tokens) on every send:
+callback lets you inject dynamic HTTP headers (e.g. auth tokens) on every send.
+An optional `onBeforeSend` callback lets you inspect the final payload and optionally
+cancel the delivery (e.g. to show a user confirmation dialog):
 
 ```dart
 final exporter = HttpErrorExporter(
@@ -274,6 +276,9 @@ final exporter = HttpErrorExporter(
   DiscordFormatter(),
   payloadBuilder: (payload) => {...payload, 'username': 'ErrorBot'},
   headersBuilder: () => {'Authorization': 'Bearer $token'},
+  onBeforeSend: (payload) async {
+    return await showConfirmationDialog(payload); // return false to cancel
+  },
 );
 ```
 
@@ -579,4 +584,3 @@ classDiagram
     ErrorExporter <|.. SlackErrorExporter
     SlackErrorExporter --> SlackPayloadFormatter
 ```
-
