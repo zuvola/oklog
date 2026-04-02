@@ -1,5 +1,5 @@
 ## 1.8.0
-- `HttpErrorExporter`: added `onBeforeSend` callback to allow inspecting the payload and optionally cancelling the HTTP request.
+- `HttpErrorExporter` and `SlackErrorExporter`: added `onBeforeSend` callback to allow inspecting the payload and optionally cancelling the HTTP request.
 
 ## 1.7.0
 - `ConsoleFormatter`: log level label (e.g. `[INFO]`) is now included in the output alongside the emoji icon.

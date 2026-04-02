@@ -242,7 +242,9 @@ try {
 
 Use `payloadBuilder` to merge dynamic top-level fields into the payload on
 every send, or `headersBuilder` to inject dynamic HTTP headers (e.g. auth
-tokens, routing keys) when going through a proxy:
+tokens, routing keys) when going through a proxy.
+An optional `onBeforeSend` callback lets you inspect the final payload and optionally
+cancel the delivery (e.g. to show a user confirmation dialog):
 
 ```dart
 final exporter = SlackErrorExporter(
@@ -254,6 +256,9 @@ final exporter = SlackErrorExporter(
   headersBuilder: () => {
     'Authorization': 'Bearer ${tokenProvider.current}',
     'X-Routing-Key': 'my-service',
+  },
+  onBeforeSend: (payload) async {
+    return await showConfirmationDialog(payload); // return false to cancel
   },
 );
 ```
