@@ -9,6 +9,13 @@ import '../core/log_formatter.dart';
 /// log.sinks.add(ConsoleSink(formatter: MyFormatter()));
 /// ```
 class ConsoleFormatter extends LogFormatter<String> {
+  /// When true, the level string (e.g. `[INFO]`) is omitted and error/stackTrace
+  /// are excluded from the formatted string. Use this when writing to
+  /// `dart:developer.log`, which accepts those values as dedicated parameters.
+  final bool forDeveloperLog;
+
+  ConsoleFormatter({this.forDeveloperLog = false});
+
   @override
   String format(LogEntry entry) {
     final dateString = _colorString('[${entry.timestamp}]', 7, false);
@@ -24,7 +31,7 @@ class ConsoleFormatter extends LogFormatter<String> {
 
   String _formatRecord(String dateString, LogRecord entry) {
     final levelString = _colorString(
-      '[${entry.level.name.toUpperCase()}]',
+      '[${entry.level.name.toUpperCase().padRight(6)}]',
       _colors[entry.level.index],
       false,
     );
@@ -34,7 +41,9 @@ class ConsoleFormatter extends LogFormatter<String> {
       false,
     );
     final buffer = StringBuffer(
-      '$dateString ${_icons[entry.level.index]} $levelString $messageString',
+      forDeveloperLog
+          ? '$dateString ${_icons[entry.level.index]} $messageString'
+          : '$dateString ${_icons[entry.level.index]} $levelString $messageString',
     );
     if (entry.attrs != null && entry.attrs!.isNotEmpty) {
       buffer.write(
@@ -45,7 +54,7 @@ class ConsoleFormatter extends LogFormatter<String> {
         ).replaceAll('\n', ' '),
       );
     }
-    if (entry.error != null || entry.stackTrace != null) {
+    if (!forDeveloperLog && (entry.error != null || entry.stackTrace != null)) {
       buffer.write('\n${_colorString('Error: ${entry.error}', 166, false)}');
       if (entry.stackTrace != null) buffer.write('\n${entry.stackTrace}');
     }
@@ -53,19 +62,27 @@ class ConsoleFormatter extends LogFormatter<String> {
   }
 
   String _formatEvent(String dateString, EventEntry entry) {
-    final buffer = StringBuffer('[EVENT] ${entry.className}: ${entry.message}');
+    final buffer = StringBuffer(
+      forDeveloperLog
+          ? '${entry.className}: ${entry.message}'
+          : '[EVENT ] ${entry.className}: ${entry.message}',
+    );
     if (entry.data != null && entry.data!.isNotEmpty) {
       buffer.write(' : ${entry.data}');
     }
     if (entry.attrs != null && entry.attrs!.isNotEmpty) {
       buffer.write(' : ${entry.attrs}');
     }
-    return '$dateString 📡 ${_colorString(buffer.toString(), 13, false)}';
+    return forDeveloperLog
+        ? '$dateString ${_colorString(buffer.toString(), 13, false)}'
+        : '$dateString 📡 ${_colorString(buffer.toString(), 13, false)}';
   }
 
   String _formatMetric(String dateString, MetricEntry entry) {
     final buffer = StringBuffer(
-      '[METRIC] ${entry.className}: ${entry.name} : ${entry.value}',
+      forDeveloperLog
+          ? '${entry.className}: ${entry.name} : ${entry.value}'
+          : '[METRIC] ${entry.className}: ${entry.name} : ${entry.value}',
     );
     if (entry.unit != null && entry.unit!.isNotEmpty) {
       buffer.write(' [${entry.unit}]');
@@ -73,7 +90,9 @@ class ConsoleFormatter extends LogFormatter<String> {
     if (entry.attrs != null && entry.attrs!.isNotEmpty) {
       buffer.write(' : ${entry.attrs}');
     }
-    return '$dateString 📊 ${_colorString(buffer.toString(), 45, false)}';
+    return forDeveloperLog
+        ? '$dateString ${_colorString(buffer.toString(), 45, false)}'
+        : '$dateString 📊 ${_colorString(buffer.toString(), 45, false)}';
   }
 
   /// Emoji icons corresponding to each [LogLevel] (trace, debug, info, notice, warn, error).
