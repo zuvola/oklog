@@ -18,7 +18,7 @@ void main() {
     });
 
     test('output contains the log level icon for each level', () {
-      final icons = ['🐾', '🛠️', '💬', '🔔', '⚠️', '❌'];
+      final icons = ['🐾', '🛠️', '💬', '🔔', '⚠️', '❌', '🚨'];
       for (var i = 0; i < LogLevel.values.length; i++) {
         final entry = LogRecord('ctx', LogLevel.values[i], 'msg');
         expect(
