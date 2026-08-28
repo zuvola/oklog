@@ -34,10 +34,19 @@ void main() {
 
   group('ErrorAlertSink', () {
     // -------------------------------------------------------------------------
-    // Only fires on error-level entries
+    // Default threshold
     // -------------------------------------------------------------------------
-    test('fires exporter on error-level LogRecord', () async {
-      final record = LogRecord('ctx', LogLevel.error, 'critical failure');
+    test('fires exporter on error-level LogRecord by default', () async {
+      final record = LogRecord('ctx', LogLevel.error, 'failure');
+      sink.emit(record);
+      await Future.microtask(() {});
+
+      expect(exporter.wasCalled, isTrue);
+      expect(exporter.calls.first.error, record);
+    });
+
+    test('fires exporter on critical-level LogRecord by default', () async {
+      final record = LogRecord('ctx', LogLevel.critical, 'critical failure');
       sink.emit(record);
       await Future.microtask(() {});
 
@@ -71,6 +80,36 @@ void main() {
     });
 
     // -------------------------------------------------------------------------
+    // Configurable threshold
+    // -------------------------------------------------------------------------
+    test('critical threshold ignores error-level LogRecord', () {
+      final criticalSink = ErrorAlertSink(
+        buffer,
+        exporter,
+        minimumLevel: LogLevel.critical,
+      );
+
+      criticalSink.emit(LogRecord('ctx', LogLevel.error, 'handled error'));
+
+      expect(exporter.wasCalled, isFalse);
+    });
+
+    test('critical threshold reports critical-level LogRecord', () async {
+      final criticalSink = ErrorAlertSink(
+        buffer,
+        exporter,
+        minimumLevel: LogLevel.critical,
+      );
+      final record = LogRecord('ctx', LogLevel.critical, 'unexpected failure');
+
+      criticalSink.emit(record);
+      await Future.microtask(() {});
+
+      expect(exporter.callCount, 1);
+      expect(exporter.calls.first.error, record);
+    });
+
+    // -------------------------------------------------------------------------
     // Non-LogRecord entries are ignored
     // -------------------------------------------------------------------------
     test('does not fire exporter for EventEntry', () {
@@ -97,6 +136,18 @@ void main() {
       await Future.microtask(() {});
 
       expect(exporter.calls.first.context, containsAll([r1, r2]));
+    });
+
+    test('excludes the triggering record from context', () async {
+      final context = LogRecord('ctx', LogLevel.info, 'step 1');
+      final error = LogRecord('ctx', LogLevel.error, 'boom');
+      buffer.process(context);
+      buffer.process(error);
+
+      sink.emit(error);
+      await Future.microtask(() {});
+
+      expect(exporter.calls.first.context, [context]);
     });
 
     test('passes empty context when buffer is empty', () async {
@@ -151,10 +202,10 @@ void main() {
     // -------------------------------------------------------------------------
     // Multiple errors trigger multiple calls
     // -------------------------------------------------------------------------
-    test('exporter is called once per error entry', () async {
+    test('exporter is called once per qualifying entry', () async {
       sink.emit(LogRecord('ctx', LogLevel.error, 'error 1'));
+      sink.emit(LogRecord('ctx', LogLevel.critical, 'critical 1'));
       sink.emit(LogRecord('ctx', LogLevel.error, 'error 2'));
-      sink.emit(LogRecord('ctx', LogLevel.error, 'error 3'));
       await Future.microtask(() {});
 
       expect(exporter.callCount, 3);
