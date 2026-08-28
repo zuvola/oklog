@@ -7,7 +7,7 @@ void main() {
   // ---------------------------------------------------------------------------
   group('LogLevel', () {
     test(
-      'has six values in order: trace, debug, info, notice, warn, error',
+      'has seven values in order: trace, debug, info, notice, warn, error, critical',
       () {
         expect(LogLevel.values, [
           LogLevel.trace,
@@ -16,6 +16,7 @@ void main() {
           LogLevel.notice,
           LogLevel.warn,
           LogLevel.error,
+          LogLevel.critical,
         ]);
       },
     );
@@ -38,6 +39,10 @@ void main() {
 
     test('warn is less severe than error', () {
       expect(LogLevel.warn.index, lessThan(LogLevel.error.index));
+    });
+
+    test('error is less severe than critical', () {
+      expect(LogLevel.error.index, lessThan(LogLevel.critical.index));
     });
   });
 
