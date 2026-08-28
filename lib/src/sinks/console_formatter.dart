@@ -95,11 +95,11 @@ class ConsoleFormatter extends LogFormatter<String> {
         : '$dateString 📊 ${_colorString(buffer.toString(), 45, false)}';
   }
 
-  /// Emoji icons corresponding to each [LogLevel] (trace, debug, info, notice, warn, error).
-  final _icons = ['🐾', '🛠️', '💬', '🔔', '⚠️', '❌'];
+  /// Emoji icons corresponding to each [LogLevel].
+  final _icons = ['🐾', '🛠️', '💬', '🔔', '⚠️', '❌', '🚨'];
 
   /// ANSI 256-color codes for each [LogLevel].
-  final _colors = [30, 245, 15, 14, 3, 9];
+  final _colors = [30, 245, 15, 14, 3, 9, 196];
 
   /// Wraps [text] in an ANSI 256-color escape sequence.
   String _colorString(String text, int? color, bool bg) {
