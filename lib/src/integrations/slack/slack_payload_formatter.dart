@@ -122,6 +122,6 @@ class SlackPayloadFormatter implements ErrorFormatter {
     return {'blocks': blocks};
   }
 
-  /// Emoji icons corresponding to each [LogLevel] (trace, debug, info, notice, warn, error).
-  static const _icons = ['🐾', '🛠️', '💬', '🔔', '⚠️', '❌'];
+  /// Emoji icons corresponding to each [LogLevel].
+  static const _icons = ['🐾', '🛠️', '💬', '🔔', '⚠️', '❌', '🚨'];
 }
