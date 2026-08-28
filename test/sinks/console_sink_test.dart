@@ -15,11 +15,15 @@ class _RecordingFormatter extends LogFormatter<String> {
 void main() {
   group('ConsoleSink', () {
     // -------------------------------------------------------------------------
-    // Default formatter
+    // Defaults
     // -------------------------------------------------------------------------
     test('default formatter is ConsoleFormatter', () {
       final sink = ConsoleSink();
       expect(sink.formatter, isA<ConsoleFormatter>());
+    });
+
+    test('uses standard console output by default', () {
+      expect(ConsoleSink().useDeveloperLog, isFalse);
     });
 
     // -------------------------------------------------------------------------
