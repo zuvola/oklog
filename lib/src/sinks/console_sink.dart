@@ -73,5 +73,6 @@ class ConsoleSink extends LogSink {
     LogLevel.notice => 850,
     LogLevel.warn => 900,
     LogLevel.error => 1000,
+    LogLevel.critical => 1200,
   };
 }
