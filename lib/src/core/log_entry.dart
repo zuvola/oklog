@@ -1,5 +1,5 @@
 /// Severity levels for log messages, ordered from least to most severe.
-enum LogLevel { trace, debug, info, notice, warn, error }
+enum LogLevel { trace, debug, info, notice, warn, error, critical }
 
 /// Base class for all log entries.
 sealed class LogEntry {
