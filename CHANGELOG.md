@@ -3,6 +3,7 @@
 - `ErrorAlertSink` now supports a configurable `minimumLevel` while preserving `error` as the default threshold.
 - Critical records are supported by console, `dart:developer.log`, and Slack context formatting.
 - The triggering record is excluded from exported context logs to avoid duplicate report content.
+- `ConsoleSink` uses standard console output by default again; `dart:developer.log` remains available with `useDeveloperLog: true`.
 
 ## 1.8.0
 - `HttpErrorExporter` and `SlackErrorExporter`: added `onBeforeSend` callback to allow inspecting the payload and optionally cancelling the HTTP request.
