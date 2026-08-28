@@ -85,6 +85,13 @@ void main() {
           isTrue,
         );
       });
+
+      test('critical passes through', () {
+        expect(
+          processor.process(LogRecord('ctx', LogLevel.critical, 'msg')),
+          isTrue,
+        );
+      });
     });
 
     group('minLevel=trace', () {
@@ -106,14 +113,28 @@ void main() {
       late LevelFilterProcessor processor;
       setUp(() => processor = LevelFilterProcessor(minLevel: LogLevel.error));
 
-      test('only error passes through', () {
+      test('error and critical pass through', () {
         for (final level in LogLevel.values) {
           final result = processor.process(LogRecord('ctx', level, 'msg'));
-          if (level == LogLevel.error) {
-            expect(result, isTrue, reason: 'error should pass');
+          if (level == LogLevel.error || level == LogLevel.critical) {
+            expect(result, isTrue, reason: '$level should pass');
           } else {
             expect(result, isFalse, reason: '$level should be blocked');
           }
+        }
+      });
+    });
+
+    group('minLevel=critical', () {
+      test('only critical passes through', () {
+        final processor = LevelFilterProcessor(minLevel: LogLevel.critical);
+        for (final level in LogLevel.values) {
+          final result = processor.process(LogRecord('ctx', level, 'msg'));
+          expect(
+            result,
+            level == LogLevel.critical,
+            reason: '$level should ${level == LogLevel.critical ? 'pass' : 'be blocked'}',
+          );
         }
       });
     });
