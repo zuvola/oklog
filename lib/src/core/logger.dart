@@ -90,7 +90,9 @@ class Logger {
     StackTrace? stackTrace,
     Map<String, Object?>? attrs,
   }) {
-    emit(LogRecord(source, LogLevel.critical, message, error, stackTrace, attrs));
+    emit(
+      LogRecord(source, LogLevel.critical, message, error, stackTrace, attrs),
+    );
   }
 }
 

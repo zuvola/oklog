@@ -133,7 +133,8 @@ void main() {
           expect(
             result,
             level == LogLevel.critical,
-            reason: '$level should ${level == LogLevel.critical ? 'pass' : 'be blocked'}',
+            reason:
+                '$level should ${level == LogLevel.critical ? 'pass' : 'be blocked'}',
           );
         }
       });
