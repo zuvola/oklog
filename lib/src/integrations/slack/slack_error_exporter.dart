@@ -48,8 +48,8 @@ class SlackErrorExporter extends HttpErrorExporter {
   SlackErrorExporter(
     String webhookUrl, {
     Map<String, dynamic> Function()? payloadBuilder,
-    Map<String, String> Function()? headersBuilder,
-    Future<bool> Function(Map<String, dynamic>)? onBeforeSend,
+    super.headersBuilder,
+    super.onBeforeSend,
   }) : super(
          // Replace the template placeholder with the demo URL so users can
          // run the example code without a real Slack webhook.
@@ -60,7 +60,5 @@ class SlackErrorExporter extends HttpErrorExporter {
          payloadBuilder: payloadBuilder != null
              ? (payload) => {...payload, ...payloadBuilder()}
              : null,
-         headersBuilder: headersBuilder,
-         onBeforeSend: onBeforeSend,
        );
 }

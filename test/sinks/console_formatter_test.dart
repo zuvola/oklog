@@ -18,7 +18,7 @@ void main() {
     });
 
     test('output contains the log level icon for each level', () {
-      final icons = ['🐾', '🛠️', '💬', '🔔', '⚠️', '❌'];
+      final icons = ['🐾', '🛠️', '💬', '🔔', '⚠️', '❌', '🚨'];
       for (var i = 0; i < LogLevel.values.length; i++) {
         final entry = LogRecord('ctx', LogLevel.values[i], 'msg');
         expect(
@@ -29,12 +29,12 @@ void main() {
       }
     });
 
-    test('output contains the log level label for each level', () {
+    test('output contains the padded log level label for each level', () {
       for (final level in LogLevel.values) {
         final entry = LogRecord('ctx', level, 'msg');
         expect(
           formatter.format(entry),
-          contains('[${level.name.toUpperCase()}]'),
+          contains('[${level.name.toUpperCase().padRight(6)}]'),
           reason: 'Expected label for $level',
         );
       }
@@ -103,9 +103,9 @@ void main() {
   // EventEntry formatting
   // -------------------------------------------------------------------------
   group('EventEntry formatting', () {
-    test('output contains [EVENT] prefix', () {
+    test('output contains padded [EVENT ] prefix', () {
       final entry = EventEntry('MyService', 'user_login');
-      expect(formatter.format(entry), contains('[EVENT]'));
+      expect(formatter.format(entry), contains('[EVENT ]'));
     });
 
     test('output contains className and message', () {

@@ -81,6 +81,19 @@ class Logger {
   }) {
     emit(LogRecord(source, LogLevel.error, message, error, stackTrace, attrs));
   }
+
+  /// Logs a critical-level message for [source], with an optional [error] and [stackTrace].
+  void critical(
+    Object source,
+    String message, {
+    Object? error,
+    StackTrace? stackTrace,
+    Map<String, Object?>? attrs,
+  }) {
+    emit(
+      LogRecord(source, LogLevel.critical, message, error, stackTrace, attrs),
+    );
+  }
 }
 
 /// Provides observability-oriented log methods (structured events and metrics).

@@ -324,7 +324,7 @@ void main() {
       expect(exportedErrors.first.level, LogLevel.error);
     });
 
-    test('passes context buffer records to exporter', () {
+    test('passes prior context buffer records to exporter', () {
       final exportedContexts = <List<LogRecord>>[];
 
       final buffer = ContextBufferProcessor();
@@ -340,8 +340,7 @@ void main() {
 
       expect(exportedContexts.length, 1);
       final ctx = exportedContexts.first;
-      // buffer holds all 3 records (including the error itself)
-      expect(ctx.map((r) => r.message), containsAll(['msg1', 'msg2', 'error']));
+      expect(ctx.map((r) => r.message).toList(), ['msg1', 'msg2']);
     });
   });
 
