@@ -13,14 +13,11 @@ import 'console_formatter.dart';
 /// ```dart
 /// log.sinks.add(ConsoleSink(formatter: MyFormatter()));
 /// ```
-///
-/// Set [useDeveloperLog] to `true` to route records through
-/// `dart:developer.log` instead of standard console output.
 class ConsoleSink extends LogSink {
   final LogFormatter<String> formatter;
   final bool useDeveloperLog;
 
-  ConsoleSink({LogFormatter<String>? formatter, this.useDeveloperLog = false})
+  ConsoleSink({LogFormatter<String>? formatter, this.useDeveloperLog = true})
     : formatter = formatter ?? ConsoleFormatter();
 
   // Formatter used for developer.log output: omits level string and error/stackTrace
