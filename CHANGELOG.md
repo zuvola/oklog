@@ -3,6 +3,7 @@
 - `ErrorAlertSink` now supports a configurable `minimumLevel` while preserving `error` as the default threshold.
 - Critical records are supported by console, `dart:developer.log`, and Slack context formatting.
 - The triggering record is excluded from exported context logs to avoid duplicate report content.
+- `ConsoleSink` now uses standard console output by default; use `useDeveloperLog: true` to opt into `dart:developer.log`.
 
 ## 1.8.0
 - `HttpErrorExporter` and `SlackErrorExporter`: added `onBeforeSend` callback to allow inspecting the payload and optionally cancelling the HTTP request.
@@ -18,7 +19,7 @@
 - `SlackErrorExporter`: replaced `extraPayload` with `payloadBuilder` (`Map<String, dynamic> Function()?`) for dynamic per-send payload merging.
 - `SlackErrorExporter`: added `headersBuilder` (`Map<String, String> Function()?`) to inject dynamic HTTP headers on every send.
 - `HttpErrorExporter`: renamed `payloadTransformer` to `payloadBuilder` for consistency.
-- `HttpErrorExporter`: added `headersBuilder` (`Map<String, String> Function()?`) to merge dynamic headers alongside the default `Content-Type`.
+- `HttpErrorExporter`: added `headersBuilder` (`Map<String, String> Function()?`) to merge dynamic HTTP headers alongside the default `Content-Type`.
 
 ## 1.4.0
 - Refactor `SlackErrorExporter` to use http package for HTTP requests.
