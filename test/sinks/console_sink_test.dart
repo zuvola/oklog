@@ -15,11 +15,24 @@ class _RecordingFormatter extends LogFormatter<String> {
 void main() {
   group('ConsoleSink', () {
     // -------------------------------------------------------------------------
-    // Default formatter
+    // Defaults
     // -------------------------------------------------------------------------
     test('default formatter is ConsoleFormatter', () {
       final sink = ConsoleSink();
       expect(sink.formatter, isA<ConsoleFormatter>());
+    });
+
+    test('writes to standard console output by default', () {
+      final formatter = _RecordingFormatter();
+      final sink = ConsoleSink(formatter: formatter);
+      final entry = LogRecord('ctx', LogLevel.info, 'hello');
+
+      expect(() => sink.emit(entry), prints('formatted:ctx\n'));
+      expect(formatter.entries, [entry]);
+    });
+
+    test('developer.log remains an explicit opt-in', () {
+      expect(ConsoleSink(useDeveloperLog: true).useDeveloperLog, isTrue);
     });
 
     // -------------------------------------------------------------------------
@@ -27,7 +40,10 @@ void main() {
     // -------------------------------------------------------------------------
     test('custom formatter is used when provided', () {
       final customFormatter = _RecordingFormatter();
-      final sink = ConsoleSink(formatter: customFormatter);
+      final sink = ConsoleSink(
+        formatter: customFormatter,
+        useDeveloperLog: true,
+      );
 
       final entry = LogRecord('MyService', LogLevel.info, 'hello');
       sink.emit(entry);
@@ -37,7 +53,10 @@ void main() {
 
     test('emit calls formatter for LogRecord', () {
       final customFormatter = _RecordingFormatter();
-      final sink = ConsoleSink(formatter: customFormatter);
+      final sink = ConsoleSink(
+        formatter: customFormatter,
+        useDeveloperLog: true,
+      );
 
       final record = LogRecord('ctx', LogLevel.debug, 'msg');
       sink.emit(record);
@@ -48,7 +67,10 @@ void main() {
 
     test('emit calls formatter for EventEntry', () {
       final customFormatter = _RecordingFormatter();
-      final sink = ConsoleSink(formatter: customFormatter);
+      final sink = ConsoleSink(
+        formatter: customFormatter,
+        useDeveloperLog: true,
+      );
 
       final event = EventEntry('ctx', 'user_click');
       sink.emit(event);
@@ -59,7 +81,10 @@ void main() {
 
     test('emit calls formatter for MetricEntry', () {
       final customFormatter = _RecordingFormatter();
-      final sink = ConsoleSink(formatter: customFormatter);
+      final sink = ConsoleSink(
+        formatter: customFormatter,
+        useDeveloperLog: true,
+      );
 
       final metric = MetricEntry('ctx', 'latency', 42, unit: 'ms');
       sink.emit(metric);
@@ -70,7 +95,10 @@ void main() {
 
     test('formatter is called once per emit', () {
       final customFormatter = _RecordingFormatter();
-      final sink = ConsoleSink(formatter: customFormatter);
+      final sink = ConsoleSink(
+        formatter: customFormatter,
+        useDeveloperLog: true,
+      );
 
       sink.emit(LogRecord('ctx', LogLevel.info, 'first'));
       sink.emit(LogRecord('ctx', LogLevel.info, 'second'));
