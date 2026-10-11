@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:oklog/oklog.dart';
 import 'package:test/test.dart';
 
