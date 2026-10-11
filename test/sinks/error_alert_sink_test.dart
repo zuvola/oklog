@@ -23,6 +23,18 @@ class _MockExporter implements ErrorExporter {
   int get callCount => calls.length;
 }
 
+class _FailingExporter implements ErrorExporter {
+  @override
+  Future<void> send(
+    LogRecord error,
+    List<LogRecord> contextLogs,
+    Map<String, String> metadata,
+  ) async {
+    await Future<void>.delayed(Duration.zero);
+    throw StateError('Export failed');
+  }
+}
+
 void main() {
   late _MockExporter exporter;
   late ContextBufferProcessor buffer;
