@@ -63,5 +63,37 @@ void main() {
       maskPiiAttrs(attrs);
       expect(attrs['email'], isA<PiiValue>());
     });
+
+    test('redacts values nested in maps and lists', () {
+      final attrs = <String, Object?>{
+        'user': {
+          'contacts': [pii('secret@example.com'), 'public'],
+        },
+      };
+
+      expect(containsPiiAttrs(attrs), isTrue);
+      final masked = maskPiiAttrs(attrs)!;
+      final contacts = (masked['user'] as Map)['contacts'] as List;
+      expect(contacts, ['[REDACTED]', 'public']);
+      expect(((attrs['user'] as Map)['contacts'] as List).first, isA<PiiValue>());
+    });
+
+    test('leaves non-PII nested values intact', () {
+      final attrs = <String, Object?>{
+        'nested': {
+          'numbers': [1, 2, 3],
+        },
+      };
+      expect(containsPiiAttrs(attrs), isFalse);
+      expect(maskPiiAttrs(attrs), attrs);
+    });
+
+    test('redacts circular container references', () {
+      final cycle = <String, Object?>{};
+      cycle['self'] = cycle;
+      final attrs = <String, Object?>{'nested': cycle};
+      final masked = maskPiiAttrs(attrs)!;
+      expect((masked['nested'] as Map)['self'], '[REDACTED]');
+    });
   });
 }
