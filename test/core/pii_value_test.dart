@@ -75,7 +75,10 @@ void main() {
       final masked = maskPiiAttrs(attrs)!;
       final contacts = (masked['user'] as Map)['contacts'] as List;
       expect(contacts, ['[REDACTED]', 'public']);
-      expect(((attrs['user'] as Map)['contacts'] as List).first, isA<PiiValue>());
+      expect(
+        ((attrs['user'] as Map)['contacts'] as List).first,
+        isA<PiiValue>(),
+      );
     });
 
     test('leaves non-PII nested values intact', () {
