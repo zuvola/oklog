@@ -134,6 +134,38 @@ void main() {
     });
   });
 
+  group('pipeline error isolation', () {
+    test('a failing sink does not prevent later sinks from running', () async {
+      final sink = _CaptureSink();
+      final errors = <Object>[];
+      final logger = Logger(
+        sinks: [_ThrowingSink(), sink],
+        onPipelineError: (error, stackTrace) => errors.add(error),
+      );
+      final record = LogRecord('ctx', LogLevel.error, 'failure');
+
+      await logger.emit(record);
+
+      expect(errors.single, isA<StateError>());
+      expect(sink.entries, [record]);
+    });
+
+    test('a failing processor stops processing without escaping', () async {
+      final sink = _CaptureSink();
+      final errors = <Object>[];
+      final logger = Logger(
+        processors: [_ThrowingProcessor()],
+        sinks: [sink],
+        onPipelineError: (error, stackTrace) => errors.add(error),
+      );
+
+      await logger.emit(LogRecord('ctx', LogLevel.error, 'failure'));
+
+      expect(errors.single, isA<StateError>());
+      expect(sink.entries, isEmpty);
+    });
+  });
+
   // ---------------------------------------------------------------------------
   // Logger convenience log methods
   // ---------------------------------------------------------------------------
