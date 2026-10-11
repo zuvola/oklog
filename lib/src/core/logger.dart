@@ -18,9 +18,16 @@ class Logger {
   /// Sinks that receive every entry that passes all processors.
   final List<LogSink> sinks;
 
-  Logger({List<LogProcessor>? processors, List<LogSink>? sinks})
-    : processors = processors ?? [],
-      sinks = sinks ?? [];
+  /// Receives errors from processors and sinks without interrupting logging.
+  /// Avoid sending these errors through this logger to prevent recursion.
+  final void Function(Object error, StackTrace stackTrace)? onPipelineError;
+
+  Logger({
+    List<LogProcessor>? processors,
+    List<LogSink>? sinks,
+    this.onPipelineError,
+  }) : processors = processors ?? [],
+       sinks = sinks ?? [];
 
   /// Runs every entry through processors then sinks.
   ///
@@ -28,11 +35,37 @@ class Logger {
   /// processors or sinks are invoked.
   Future<void> emit(LogEntry entry) async {
     for (final processor in processors) {
-      if (!processor.process(entry)) return;
+      try {
+        if (!processor.process(entry)) return;
+      } catch (error, stackTrace) {
+        _reportPipelineFailure('processor', error, stackTrace);
+        return;
+      }
     }
     for (final sink in sinks) {
-      sink.emit(entry);
+      try {
+        sink.emit(entry);
+      } catch (error, stackTrace) {
+        _reportPipelineFailure('sink', error, stackTrace);
+      }
     }
+  }
+
+  void _reportPipelineFailure(
+    String stage,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    if (onPipelineError != null) {
+      try {
+        onPipelineError!(error, stackTrace);
+        return;
+      } catch (handlerError) {
+        print('Log $stage error handler failed (${handlerError.runtimeType}).');
+      }
+    }
+    // Do not stringify arbitrary errors: they may contain credentials or PII.
+    print('Log $stage failed (${error.runtimeType}).');
   }
 
   ObservabilityLogger? _obs;
