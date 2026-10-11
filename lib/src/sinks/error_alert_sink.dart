@@ -45,8 +45,9 @@ class ErrorAlertSink extends LogSink {
   /// are forwarded to the [exporter] with every report.
   final Map<String, String> metadata;
 
-  /// Optional handler for exporter failures. Do not log through the same
-  /// exporter from this handler, or reporting may recurse indefinitely.
+  /// Optional handler for failures propagated by an exporter. The built-in
+  /// [HttpErrorExporter] handles and logs its own HTTP delivery failures.
+  /// Do not log through this exporter from the handler to avoid recursion.
   final void Function(Object error, StackTrace stackTrace)? onExportError;
 
   ErrorAlertSink(
@@ -80,7 +81,9 @@ class ErrorAlertSink extends LogSink {
           onExportError!(failure, stackTrace);
           return;
         } catch (handlerError) {
-          print('Error report failure handler failed (${handlerError.runtimeType}).');
+          print(
+            'Error report failure handler failed (${handlerError.runtimeType}).',
+          );
         }
       }
       // Arbitrary exporter exceptions may contain webhook credentials.
