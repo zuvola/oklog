@@ -273,6 +273,37 @@ void main() {
       expect(identical(exporter.calls.first.error, record), isTrue);
     });
 
+    test('redacts PII inside nested errors and context', () async {
+      buffer.process(LogRecord('ctx', LogLevel.info, 'prior', null, null, {
+        'nested': [pii('private value')],
+      }));
+      sink.emit(LogRecord('ctx', LogLevel.error, 'failure', null, null, {
+        'user': {'email': pii('private email')},
+      }));
+      await Future<void>.delayed(Duration.zero);
+
+      final errorAttrs = exporter.calls.single.error.attrs!;
+      expect((errorAttrs['user'] as Map)['email'], '[REDACTED]');
+      final contextAttrs = exporter.calls.single.context.single.attrs!;
+      expect(contextAttrs['nested'], ['[REDACTED]']);
+    });
+
+    test('catches asynchronous exporter failures', () async {
+      final failure = Completer<Object>();
+      final failingSink = ErrorAlertSink(
+        buffer,
+        _FailingExporter(),
+        onExportError: (error, stackTrace) => failure.complete(error),
+      );
+
+      failingSink.emit(LogRecord('ctx', LogLevel.error, 'failure'));
+
+      expect(
+        await failure.future.timeout(const Duration(seconds: 1)),
+        isA<StateError>(),
+      );
+    });
+
     test('preserves timestamp when masking PII', () async {
       final record = LogRecord(
         'AuthService',
