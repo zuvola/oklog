@@ -46,7 +46,7 @@ class ErrorAlertSink extends LogSink {
   final Map<String, String> metadata;
 
   /// Optional handler for failures propagated by an exporter. The built-in
-  /// [HttpErrorExporter] handles and logs its own HTTP delivery failures.
+  /// `HttpErrorExporter` handles and logs its own HTTP delivery failures.
   /// Do not log through this exporter from the handler to avoid recursion.
   final void Function(Object error, StackTrace stackTrace)? onExportError;
 
