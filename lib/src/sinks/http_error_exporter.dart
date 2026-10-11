@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -43,6 +44,12 @@ class HttpErrorExporter implements ErrorExporter {
   /// Use this to inject dynamic values such as auth tokens or routing keys.
   final Map<String, String> Function()? headersBuilder;
 
+  /// Maximum time to wait for an HTTP request to complete.
+  final Duration requestTimeout;
+
+  /// Optional HTTP client. The exporter closes only clients it creates.
+  final http.Client? client;
+
   /// Optional callback invoked before sending the payload.
   ///
   /// Receives the final payload. If it returns `false`, the sending process
@@ -55,6 +62,8 @@ class HttpErrorExporter implements ErrorExporter {
     this.payloadBuilder,
     this.headersBuilder,
     this.onBeforeSend,
+    this.requestTimeout = const Duration(seconds: 10),
+    this.client,
   });
 
   @override
@@ -63,29 +72,41 @@ class HttpErrorExporter implements ErrorExporter {
     List<LogRecord> contextLogs,
     Map<String, String> metadata,
   ) async {
-    var payload = formatter.format(error, contextLogs, metadata);
-    if (payloadBuilder != null) payload = payloadBuilder!(payload);
-
-    if (onBeforeSend != null) {
-      final shouldSend = await onBeforeSend!(payload);
-      if (!shouldSend) return;
-    }
-
-    if (url == demoUrl) {
-      // Demo mode: print the formatted payload to the console.
-      print('[HttpErrorExporter demo] ${jsonEncode(payload)}');
-      return;
-    }
-    final uri = Uri.parse(url);
-    final headers = {
-      'Content-Type': 'application/json',
-      ...?headersBuilder?.call(),
-    };
+    http.Client? ownedClient;
     try {
-      await http.post(uri, headers: headers, body: jsonEncode(payload));
-    } catch (e) {
-      // Errors during delivery must not propagate and crash the application.
-      print('Failed to send error report to $url: $e');
+      var payload = formatter.format(error, contextLogs, metadata);
+      if (payloadBuilder != null) payload = payloadBuilder!(payload);
+
+      if (onBeforeSend != null) {
+        final shouldSend = await onBeforeSend!(payload);
+        if (!shouldSend) return;
+      }
+
+      if (url == demoUrl) {
+        // Demo mode never performs an HTTP request.
+        print('[HttpErrorExporter demo] ${jsonEncode(payload)}');
+        return;
+      }
+
+      final uri = Uri.parse(url);
+      final headers = {
+        'Content-Type': 'application/json',
+        ...?headersBuilder?.call(),
+      };
+      final httpClient = client ?? (ownedClient = http.Client());
+      final response = await httpClient
+          .post(uri, headers: headers, body: jsonEncode(payload))
+          .timeout(requestTimeout);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        print('Failed to send error report (HTTP ${response.statusCode}).');
+      }
+    } on TimeoutException {
+      print('Failed to send error report (HTTP request timed out).');
+    } catch (error) {
+      // Exception messages and webhook URLs may contain authentication tokens.
+      print('Failed to send error report (${error.runtimeType}).');
+    } finally {
+      ownedClient?.close();
     }
   }
 }
