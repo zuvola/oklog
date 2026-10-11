@@ -31,6 +31,16 @@ class _DropProcessor implements LogProcessor {
   }
 }
 
+class _ThrowingSink implements LogSink {
+  @override
+  void emit(LogEntry entry) => throw StateError('sink failed');
+}
+
+class _ThrowingProcessor implements LogProcessor {
+  @override
+  bool process(LogEntry entry) => throw StateError('processor failed');
+}
+
 void main() {
   // ---------------------------------------------------------------------------
   // Logger pipeline
