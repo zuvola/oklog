@@ -22,15 +22,72 @@ class PiiValue<T extends Object> {
 /// ```
 PiiValue<T> pii<T extends Object>(T value) => PiiValue(value);
 
-/// Returns a copy of [attrs] with every [PiiValue] replaced by [mask].
+/// Returns a copy of [attrs] with nested [PiiValue] entries replaced.
 ///
+/// Traverses maps and iterables, including nested combinations. Cyclic
+/// containers are redacted to prevent unbounded recursion.
 /// Returns `null` when [attrs] is `null`.
 Map<String, Object?>? maskPiiAttrs(
   Map<String, Object?>? attrs, [
   String mask = '[REDACTED]',
 ]) {
   if (attrs == null) return null;
+  final ancestors = <Object>{};
   return {
-    for (final e in attrs.entries) e.key: e.value is PiiValue ? mask : e.value,
+    for (final entry in attrs.entries)
+      entry.key: _maskValue(entry.value, mask, ancestors),
   };
+}
+
+Object? _maskValue(Object? value, String mask, Set<Object> ancestors) {
+  if (value is PiiValue) return mask;
+  if (value is Map) {
+    if (!ancestors.add(value)) return mask;
+    try {
+      return {
+        for (final entry in value.entries)
+          entry.key: _maskValue(entry.value, mask, ancestors),
+      };
+    } finally {
+      ancestors.remove(value);
+    }
+  }
+  if (value is Iterable) {
+    if (!ancestors.add(value)) return mask;
+    try {
+      return [
+        for (final item in value) _maskValue(item, mask, ancestors),
+      ];
+    } finally {
+      ancestors.remove(value);
+    }
+  }
+  return value;
+}
+
+/// Whether a map or nested iterable contains a marked PII value.
+bool containsPiiAttrs(Map<String, Object?>? attrs) {
+  if (attrs == null) return false;
+  return _containsPii(attrs, <Object>{});
+}
+
+bool _containsPii(Object? value, Set<Object> ancestors) {
+  if (value is PiiValue) return true;
+  if (value is Map) {
+    if (!ancestors.add(value)) return false;
+    try {
+      return value.values.any((item) => _containsPii(item, ancestors));
+    } finally {
+      ancestors.remove(value);
+    }
+  }
+  if (value is Iterable) {
+    if (!ancestors.add(value)) return false;
+    try {
+      return value.any((item) => _containsPii(item, ancestors));
+    } finally {
+      ancestors.remove(value);
+    }
+  }
+  return false;
 }
