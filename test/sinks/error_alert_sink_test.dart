@@ -305,6 +305,7 @@ void main() {
         isNot(contains('masked-key')),
       );
     });
+
     test('catches asynchronous exporter failures', () async {
       final failure = Completer<Object>();
       final failingSink = ErrorAlertSink(
