@@ -25,8 +25,8 @@ class OkLogger extends Logger {
 
   OkLogger({
     LogLevel level = LogLevel.debug,
-    void Function(Object error, StackTrace stackTrace)? onPipelineError,
-  }) : super(onPipelineError: onPipelineError) {
+    super.onPipelineError,
+  }) {
     _levelFilter = LevelFilterProcessor(minLevel: level);
     nameFilter = NameFilterProcessor();
     processors.addAll([_levelFilter, nameFilter]);
