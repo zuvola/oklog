@@ -117,6 +117,37 @@ void main() {
     expect(context.indexOf('entry-38'), lessThan(context.indexOf('entry-39')));
   });
 
+  test('uses the full context budget when no logs are omitted', () {
+    const prefix = '*Context Logs:*\n```';
+    const suffix = '```';
+    const omittedMarker = '[Context truncated]\n';
+    final error = LogRecord('service', LogLevel.error, 'failure');
+    final baseline = _section(
+      _blocks(formatter.format(
+        error,
+        [LogRecord('ctx', LogLevel.info, '')],
+        const {},
+      )),
+      '*Context Logs:*',
+    );
+    final emptyLineLength = baseline.length - prefix.length - suffix.length;
+    final available = 3000 - prefix.length - suffix.length;
+    final lineLength = available - omittedMarker.length + 1;
+    final message = 'x' * (lineLength - emptyLineLength);
+    final context = _section(
+      _blocks(formatter.format(
+        error,
+        [LogRecord('ctx', LogLevel.info, message)],
+        const {},
+      )),
+      '*Context Logs:*',
+    );
+
+    expect(context.length, prefix.length + lineLength + suffix.length);
+    expect(context, isNot(contains('[Context truncated]')));
+    expect(context, contains(message));
+  });
+
   test('truncates an oversized newest entry without including stale logs', () {
     final logs = [
       LogRecord('ctx', LogLevel.info, 'stale-entry'),
