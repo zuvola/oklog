@@ -69,10 +69,7 @@ class ErrorAlertSink extends LogSink {
     unawaited(_sendSafely(_redacted(entry), context));
   }
 
-  Future<void> _sendSafely(
-    LogRecord error,
-    List<LogRecord> context,
-  ) async {
+  Future<void> _sendSafely(LogRecord error, List<LogRecord> context) async {
     try {
       await exporter.send(error, context, metadata);
     } catch (failure, stackTrace) {

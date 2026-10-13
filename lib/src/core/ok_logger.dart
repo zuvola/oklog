@@ -23,10 +23,7 @@ class OkLogger extends Logger {
   /// [NameFilterProcessor.denyList] to restrict which classes are logged.
   late final NameFilterProcessor nameFilter;
 
-  OkLogger({
-    LogLevel level = LogLevel.debug,
-    super.onPipelineError,
-  }) {
+  OkLogger({LogLevel level = LogLevel.debug, super.onPipelineError}) {
     _levelFilter = LevelFilterProcessor(minLevel: level);
     nameFilter = NameFilterProcessor();
     processors.addAll([_levelFilter, nameFilter]);

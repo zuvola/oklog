@@ -274,12 +274,16 @@ void main() {
     });
 
     test('redacts PII inside nested errors and context', () async {
-      buffer.process(LogRecord('ctx', LogLevel.info, 'prior', null, null, {
-        'nested': [pii('private value')],
-      }));
-      sink.emit(LogRecord('ctx', LogLevel.error, 'failure', null, null, {
-        'user': {'email': pii('private email')},
-      }));
+      buffer.process(
+        LogRecord('ctx', LogLevel.info, 'prior', null, null, {
+          'nested': [pii('private value')],
+        }),
+      );
+      sink.emit(
+        LogRecord('ctx', LogLevel.error, 'failure', null, null, {
+          'user': {'email': pii('private email')},
+        }),
+      );
       await Future<void>.delayed(Duration.zero);
 
       final errorAttrs = exporter.calls.single.error.attrs!;
@@ -290,12 +294,16 @@ void main() {
 
     test('redacts PII map keys before forwarding records', () async {
       final key = pii('masked-key');
-      buffer.process(LogRecord('ctx', LogLevel.info, 'prior', null, null, {
-        'nested': {key: 'context'},
-      }));
-      sink.emit(LogRecord('ctx', LogLevel.error, 'failure', null, null, {
-        'nested': {key: 'error'},
-      }));
+      buffer.process(
+        LogRecord('ctx', LogLevel.info, 'prior', null, null, {
+          'nested': {key: 'context'},
+        }),
+      );
+      sink.emit(
+        LogRecord('ctx', LogLevel.error, 'failure', null, null, {
+          'nested': {key: 'error'},
+        }),
+      );
       await Future<void>.delayed(Duration.zero);
 
       final exported = exporter.calls.single;

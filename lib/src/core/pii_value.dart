@@ -59,9 +59,7 @@ Object? _maskValue(Object? value, String mask, Set<Object> ancestors) {
   if (value is Iterable) {
     if (!ancestors.add(value)) return mask;
     try {
-      return [
-        for (final item in value) _maskValue(item, mask, ancestors),
-      ];
+      return [for (final item in value) _maskValue(item, mask, ancestors)];
     } finally {
       ancestors.remove(value);
     }
