@@ -141,15 +141,30 @@ class SlackPayloadFormatter implements ErrorFormatter {
   }
 
   /// Preserves the most recent records while displaying the selected ones
-  /// chronologically. The omission marker fits within the section limit.
+  /// chronologically. Reserve room for the marker only when truncating.
   static String _contextText(List<LogRecord> contextLogs) {
     const prefix = '*Context Logs:*\n```';
     const suffix = '```';
-    final available =
-        _maxSectionLength - prefix.length - suffix.length - _omittedMarker.length;
+    final available = _maxSectionLength - prefix.length - suffix.length;
+
+    var selection = _retainRecentContextLines(contextLogs, available);
+    if (selection.truncated) {
+      selection = _retainRecentContextLines(
+        contextLogs,
+        available - _omittedMarker.length,
+      );
+    }
+
+    final text = selection.lines.reversed.join('\n');
+    return '$prefix${selection.truncated ? _omittedMarker : ''}$text$suffix';
+  }
+
+  static ({List<String> lines, bool truncated}) _retainRecentContextLines(
+    List<LogRecord> contextLogs,
+    int available,
+  ) {
     final retained = <String>[];
     var used = 0;
-    var truncated = false;
 
     for (final record in contextLogs.reversed) {
       final line = _contextLine(record);
@@ -159,13 +174,11 @@ class SlackPayloadFormatter implements ErrorFormatter {
         used += separatorLength + line.length;
         continue;
       }
-      truncated = true;
       if (retained.isEmpty) retained.add(_truncate(line, available));
-      break;
+      return (lines: retained, truncated: true);
     }
 
-    final text = retained.reversed.join('\n');
-    return '$prefix${truncated ? _omittedMarker : ''}$text$suffix';
+    return (lines: retained, truncated: false);
   }
 
   static String _contextLine(LogRecord record) {
