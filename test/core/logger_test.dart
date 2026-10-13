@@ -31,6 +31,16 @@ class _DropProcessor implements LogProcessor {
   }
 }
 
+class _ThrowingSink implements LogSink {
+  @override
+  void emit(LogEntry entry) => throw StateError('sink failed');
+}
+
+class _ThrowingProcessor implements LogProcessor {
+  @override
+  bool process(LogEntry entry) => throw StateError('processor failed');
+}
+
 void main() {
   // ---------------------------------------------------------------------------
   // Logger pipeline
@@ -121,6 +131,38 @@ void main() {
 
       expect(pass.callCount, 1);
       expect(sink.entries.length, 1);
+    });
+  });
+
+  group('pipeline error isolation', () {
+    test('a failing sink does not prevent later sinks from running', () async {
+      final sink = _CaptureSink();
+      final errors = <Object>[];
+      final logger = Logger(
+        sinks: [_ThrowingSink(), sink],
+        onPipelineError: (error, stackTrace) => errors.add(error),
+      );
+      final record = LogRecord('ctx', LogLevel.error, 'failure');
+
+      await logger.emit(record);
+
+      expect(errors.single, isA<StateError>());
+      expect(sink.entries, [record]);
+    });
+
+    test('a failing processor stops processing without escaping', () async {
+      final sink = _CaptureSink();
+      final errors = <Object>[];
+      final logger = Logger(
+        processors: [_ThrowingProcessor()],
+        sinks: [sink],
+        onPipelineError: (error, stackTrace) => errors.add(error),
+      );
+
+      await logger.emit(LogRecord('ctx', LogLevel.error, 'failure'));
+
+      expect(errors.single, isA<StateError>());
+      expect(sink.entries, isEmpty);
     });
   });
 

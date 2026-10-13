@@ -34,6 +34,33 @@ void main() {
       });
     });
 
+    group('pipeline error callbacks', () {
+      test('forwards onPipelineError to the base Logger', () async {
+        final errors = <Object>[];
+        final logger = OkLogger(
+          onPipelineError: (error, stackTrace) => errors.add(error),
+        );
+        logger.sinks
+          ..clear()
+          ..add(_FailingSink());
+
+        await logger.emit(LogRecord('ctx', LogLevel.error, 'failure'));
+
+        expect(errors.single, isA<StateError>());
+      });
+
+      test('allows configuring the global logger after creation', () {
+        final previous = log.onPipelineError;
+        try {
+          void callback(Object error, StackTrace stackTrace) {}
+          log.onPipelineError = callback;
+          expect(log.onPipelineError, same(callback));
+        } finally {
+          log.onPipelineError = previous;
+        }
+      });
+    });
+
     // -------------------------------------------------------------------------
     // level getter and setter
     // -------------------------------------------------------------------------
@@ -106,6 +133,11 @@ void main() {
       });
     });
   });
+}
+
+class _FailingSink extends LogSink {
+  @override
+  void emit(LogEntry entry) => throw StateError('sink failed');
 }
 
 /// Captures [LogRecord] entries emitted through the pipeline.

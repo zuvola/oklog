@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../core/log_entry.dart';
 import '../core/log_sink.dart';
 import '../core/pii_value.dart';
@@ -43,33 +45,52 @@ class ErrorAlertSink extends LogSink {
   /// are forwarded to the [exporter] with every report.
   final Map<String, String> metadata;
 
+  /// Optional handler for failures propagated by an exporter. The built-in
+  /// `HttpErrorExporter` handles and logs its own HTTP delivery failures.
+  /// Do not log through this exporter from the handler to avoid recursion.
+  final void Function(Object error, StackTrace stackTrace)? onExportError;
+
   ErrorAlertSink(
     this.buffer,
     this.exporter, {
     this.minimumLevel = LogLevel.error,
     this.metadata = const {},
+    this.onExportError,
   });
 
   @override
   void emit(LogEntry entry) {
     if (entry is! LogRecord || entry.level.index < minimumLevel.index) return;
-    exporter.send(
-      _redacted(entry),
-      buffer
-          .getRecent()
-          .where((record) => !identical(record, entry))
-          .map(_redacted)
-          .toList(),
-      metadata,
-    );
+    final context = buffer
+        .getRecent()
+        .where((record) => !identical(record, entry))
+        .map(_redacted)
+        .toList();
+    unawaited(_sendSafely(_redacted(entry), context));
   }
 
-  /// Returns [r] unchanged if it has no PII attrs; otherwise returns a copy
-  /// with all [PiiValue] entries replaced by a redaction marker.
-  LogRecord _redacted(LogRecord r) {
-    if (r.attrs == null || !r.attrs!.values.any((v) => v is PiiValue)) {
-      return r;
+  Future<void> _sendSafely(LogRecord error, List<LogRecord> context) async {
+    try {
+      await exporter.send(error, context, metadata);
+    } catch (failure, stackTrace) {
+      if (onExportError != null) {
+        try {
+          onExportError!(failure, stackTrace);
+          return;
+        } catch (handlerError) {
+          print(
+            'Error report failure handler failed (${handlerError.runtimeType}).',
+          );
+        }
+      }
+      // Arbitrary exporter exceptions may contain webhook credentials.
+      print('Error report export failed (${failure.runtimeType}).');
     }
+  }
+
+  /// Returns [r] unchanged when no nested attribute is marked as PII.
+  LogRecord _redacted(LogRecord r) {
+    if (!containsPiiAttrs(r.attrs)) return r;
     return r.copyWithAttrs(maskPiiAttrs(r.attrs));
   }
 }
