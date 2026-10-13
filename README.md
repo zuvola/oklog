@@ -22,7 +22,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  oklog: ^2.0.0
+  oklog: ^2.1.0
 ```
 
 Then import the library:

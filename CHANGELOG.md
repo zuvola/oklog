@@ -1,3 +1,12 @@
+## 2.1.0
+- Improved error reporting reliability with safer exception handling, HTTP timeout, and failure detection.
+- Added `onPipelineError` and `onExportError` callbacks.
+- Improved PII masking for nested maps, lists, and map keys.
+- Limited Slack payload sizes and prioritized recent context logs when truncating.
+- `ContextBufferProcessor` now rejects invalid capacities.
+- Fixed custom formatter handling in `ConsoleSink`.
+- Updated documentation and added regression tests.
+
 ## 2.0.0
 - Added `LogLevel.critical` and `Logger.critical()` for report-worthy failures above ordinary errors.
 - `ErrorAlertSink` now supports a configurable `minimumLevel` while preserving `error` as the default threshold.
