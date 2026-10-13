@@ -74,6 +74,24 @@ void main() {
     expect(message, isNot(endsWith('...')));
   });
 
+  test('does not split a surrogate pair at a truncation boundary', () {
+    const prefix = ':rotating_light: Error: ';
+    final source =
+        '${'C' * (150 - prefix.length - 4)}😀${'x' * 100}';
+    final blocks = _blocks(formatter.format(
+      LogRecord(source, LogLevel.error, 'failure'),
+      [],
+      const {},
+    ));
+    final header = _blockText(blocks.first);
+
+    expect(header, endsWith('...'));
+    expect(header.length, 149);
+    expect(
+      header.codeUnits.any((unit) => unit >= 0xD800 && unit <= 0xDFFF),
+      isFalse,
+    );
+  });
   test('keeps the newest records but displays them oldest first', () {
     final logs = List.generate(
       40,
