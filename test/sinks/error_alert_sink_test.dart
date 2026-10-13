@@ -288,6 +288,23 @@ void main() {
       expect(contextAttrs['nested'], ['[REDACTED]']);
     });
 
+    test('redacts PII map keys before forwarding records', () async {
+      final key = pii('masked-key');
+      buffer.process(LogRecord('ctx', LogLevel.info, 'prior', null, null, {
+        'nested': {key: 'context'},
+      }));
+      sink.emit(LogRecord('ctx', LogLevel.error, 'failure', null, null, {
+        'nested': {key: 'error'},
+      }));
+      await Future<void>.delayed(Duration.zero);
+
+      final exported = exporter.calls.single;
+      expect(exported.error.attrs.toString(), isNot(contains('masked-key')));
+      expect(
+        exported.context.single.attrs.toString(),
+        isNot(contains('masked-key')),
+      );
+    });
     test('catches asynchronous exporter failures', () async {
       final failure = Completer<Object>();
       final failingSink = ErrorAlertSink(
