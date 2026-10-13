@@ -11,6 +11,20 @@ void main() {
       expect(processor.capacity, 20);
     });
 
+    test('rejects zero capacity at construction', () {
+      expect(
+        () => ContextBufferProcessor(0),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('rejects negative capacity at construction', () {
+      expect(
+        () => ContextBufferProcessor(-1),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
     test('empty buffer returns empty list', () {
       final processor = ContextBufferProcessor(5);
       expect(processor.getRecent(), isEmpty);

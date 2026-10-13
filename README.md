@@ -6,7 +6,7 @@ A simple yet capable logging utility for Dart and Flutter. Just log. ok.
 
 ## Features
 
-- Six log levels: `trace`, `debug`, `info`, `notice`, `warn`, `error`
+- Seven log levels: `trace`, `debug`, `info`, `notice`, `warn`, `error`, `critical`
 - Colored, emoji-decorated console output with level labels (e.g. `[INFO]`) via `ConsoleSink` and `ConsoleFormatter`
 - Filter logs by level via `LevelFilterProcessor` and by class name via `NameFilterProcessor`
 - Extensible pipeline: add `LogProcessor` instances to transform/filter, and `LogSink` instances to route output
@@ -22,7 +22,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  oklog: ^1.1.0
+  oklog: ^2.0.0
 ```
 
 Then import the library:
@@ -57,6 +57,7 @@ void main() {
     throw Exception('Something went wrong!');
   } catch (e, st) {
     log.error('main', 'An error occurred.', error: e, stackTrace: st);
+    // Use log.critical(...) instead for unrecoverable failures.
   }
 }
 ```
@@ -81,15 +82,19 @@ All log methods accept an optional `attrs` map for structured key-value metadata
 log.debug(this, 'User action', attrs: {'userId': 123, 'action': 'login'});
 ```
 
+Attribute maps are held by reference for low logging overhead. Avoid mutating
+attribute collections after passing them to the logger.
+
 ### PII (Personally Identifiable Information)
 
 Wrap sensitive values with `pii()` to mark them as personally identifiable
 information. Each sink decides independently how to handle `PiiValue` entries:
 
 - **`ConsoleSink`** — reveals the raw value (safe for local development).
-- **`ErrorAlertSink`** — replaces every `PiiValue` with `[REDACTED]` before
-  forwarding to the `ErrorExporter`, so sensitive data never leaves the device
-  in error reports.
+- **`ErrorAlertSink`** — replaces `PiiValue` entries in `LogRecord.attrs`
+  (including nested maps/lists and map keys) with `[REDACTED]` before forwarding
+  to the `ErrorExporter`. Messages, error objects, stack traces, and metadata
+  are **not** automatically redacted.
 
 ```dart
 log.info(
@@ -131,7 +136,7 @@ log.sinks.clear(); // remove all sinks to suppress output
 ### Changing the log level
 
 ```dart
-log.level = LogLevel.warn; // only warn and error are printed
+log.level = LogLevel.warn; // warn, error, and critical are printed
 ```
 
 ### Custom sinks
@@ -161,6 +166,8 @@ string. Replace the default `ConsoleFormatter` to change how entries are rendere
 without touching sink behaviour:
 
 ```dart
+import 'dart:convert';
+
 class JsonFormatter extends LogFormatter<String> {
   @override
   String format(LogEntry entry) {
@@ -180,11 +187,18 @@ log.sinks
   ..add(ConsoleSink(formatter: JsonFormatter()));
 ```
 
+When `useDeveloperLog: true` is set, explicitly supplied formatters (including
+`ConsoleFormatter` subclasses) are used unchanged. Without an explicit
+formatter, `ConsoleSink` automatically uses a developer-log-specific
+`ConsoleFormatter` that avoids repeating error and stack trace details.
+
 ### Custom processors
 
 Implement `LogProcessor` and return `false` to drop an entry from the pipeline:
 
 ```dart
+import 'dart:math';
+
 class SamplingProcessor implements LogProcessor {
   @override
   bool process(LogEntry entry) => Random().nextDouble() > 0.9; // keep 10%
@@ -196,6 +210,8 @@ log.processors.add(SamplingProcessor());
 ### Error alerting with context
 
 `ContextBufferProcessor` keeps a ring buffer of recent `LogRecord` entries.
+Its capacity must be greater than zero (default: 20); passing zero or a
+negative value throws `ArgumentError` when constructed.
 `ErrorAlertSink` detects error-level records and forwards them — together with
 that buffer — to an `ErrorExporter`, giving the recipient rich context about
 what happened before the error.
@@ -407,7 +423,7 @@ Console output:
 | `value`   | `num`                   | Yes (`metric` only) | Numeric measurement.                           |
 | `unit`    | `String?`               | No       | Unit label, e.g. `'ms'`, `'count'` (metric only).       |
 | `data`    | `Map<String, dynamic>?` | No       | Arbitrary payload (event only).                          |
-| `attrs`   | `Map<String, Object>?`  | No       | Structured metadata, e.g. environment or version.        |
+| `attrs`   | `Map<String, Object?>?` | No       | Structured metadata, e.g. environment or version.        |
 
 ## Log levels
 
@@ -419,6 +435,7 @@ Console output:
 | `notice` | Notable events worth highlighting  |
 | `warn`   | Warnings with optional error/stack |
 | `error`  | Errors with error object and stack |
+| `critical` | Critical failures with optional error and stack |
 
 ## Class diagram
 
@@ -458,6 +475,7 @@ classDiagram
         notice
         warn
         error
+        critical
     }
 
     LogEntry <|-- LogRecord
@@ -491,6 +509,8 @@ classDiagram
         +notice(Object, String, attrs?)
         +warn(Object, String, error?, stackTrace?, attrs?)
         +error(Object, String, error?, stackTrace?, attrs?)
+        +critical(Object, String, error?, stackTrace?, attrs?)
+        +onPipelineError callback?
         +obs ObservabilityLogger
     }
     class OkLogger {
@@ -537,6 +557,7 @@ classDiagram
     }
     class ConsoleSink {
         +LogFormatter~String~ formatter
+        +bool useDeveloperLog
         +emit(LogEntry)
     }
     class ConsoleFormatter {
@@ -550,6 +571,7 @@ classDiagram
         +ContextBufferProcessor buffer
         +ErrorExporter exporter
         +Map~String,String~ metadata
+        +onExportError callback?
         +emit(LogEntry)
     }
     class ErrorExporter {
@@ -563,6 +585,7 @@ classDiagram
     class HttpErrorExporter {
         +String url
         +ErrorFormatter formatter
+        +Duration requestTimeout
         +send(LogRecord, List~LogRecord~, Map~String,String~) Future~void~
     }
 

@@ -12,6 +12,17 @@ class _RecordingFormatter extends LogFormatter<String> {
   }
 }
 
+/// A ConsoleFormatter subclass with a custom developer-log representation.
+class _CustomConsoleFormatter extends ConsoleFormatter {
+  final List<LogEntry> entries = [];
+
+  @override
+  String format(LogEntry entry) {
+    entries.add(entry);
+    return 'custom:${entry.className}';
+  }
+}
+
 void main() {
   group('ConsoleSink', () {
     // -------------------------------------------------------------------------
@@ -49,6 +60,20 @@ void main() {
       sink.emit(entry);
 
       expect(customFormatter.entries, contains(entry));
+    });
+
+    test('uses an explicitly provided ConsoleFormatter subclass', () {
+      final customFormatter = _CustomConsoleFormatter();
+      final sink = ConsoleSink(
+        formatter: customFormatter,
+        useDeveloperLog: true,
+      );
+      final entry = LogRecord('MyService', LogLevel.info, 'hello');
+
+      sink.emit(entry);
+
+      expect(sink.formatter, same(customFormatter));
+      expect(customFormatter.entries, [entry]);
     });
 
     test('emit calls formatter for LogRecord', () {

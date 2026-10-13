@@ -14,7 +14,13 @@ class ContextBufferProcessor implements LogProcessor {
   int _index = 0;
 
   ContextBufferProcessor([this.capacity = 20])
-    : _buffer = List.filled(capacity, null);
+    : _buffer = capacity > 0
+          ? List<LogRecord?>.filled(capacity, null)
+          : throw ArgumentError.value(
+              capacity,
+              'capacity',
+              'Must be greater than zero',
+            );
 
   @override
   bool process(LogEntry entry) {
