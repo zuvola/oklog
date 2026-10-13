@@ -19,8 +19,9 @@ class Logger {
   final List<LogSink> sinks;
 
   /// Receives errors from processors and sinks without interrupting logging.
+  /// Can be configured after construction, including on the global logger.
   /// Avoid sending these errors through this logger to prevent recursion.
-  final void Function(Object error, StackTrace stackTrace)? onPipelineError;
+  void Function(Object error, StackTrace stackTrace)? onPipelineError;
 
   Logger({
     List<LogProcessor>? processors,
