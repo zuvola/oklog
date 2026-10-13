@@ -15,7 +15,7 @@ class ContextBufferProcessor implements LogProcessor {
 
   ContextBufferProcessor([this.capacity = 20])
     : _buffer = capacity > 0
-          ? List.filled(capacity, null)
+          ? List<LogRecord?>.filled(capacity, null)
           : throw ArgumentError.value(
               capacity,
               'capacity',
