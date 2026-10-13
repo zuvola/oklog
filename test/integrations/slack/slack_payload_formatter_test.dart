@@ -92,6 +92,7 @@ void main() {
       isFalse,
     );
   });
+
   test('keeps the newest records but displays them oldest first', () {
     final logs = List.generate(
       40,
