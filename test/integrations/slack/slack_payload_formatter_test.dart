@@ -38,7 +38,7 @@ void main() {
       {'metadata': long},
     ));
 
-    expect(blocks.length, 7);
+    expect(blocks.length, 8);
     expect(_blockText(blocks.first).length, lessThanOrEqualTo(150));
     expect(_blockText(blocks.first), startsWith(':rotating_light: Error: '));
     for (final block in blocks.skip(1)) {
