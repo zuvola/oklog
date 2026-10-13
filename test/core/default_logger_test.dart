@@ -52,7 +52,7 @@ void main() {
       test('allows configuring the global logger after creation', () {
         final previous = log.onPipelineError;
         try {
-          void callback(Object error, StackTrace stackTrace) {}
+          final callback = (Object error, StackTrace stackTrace) {};
           log.onPipelineError = callback;
           expect(log.onPipelineError, same(callback));
         } finally {
