@@ -12,12 +12,12 @@ String _blockText(Map<String, dynamic> block) {
   return (block['text'] as Map)['text'] as String;
 }
 
-String _section(List<Map<String, dynamic>> blocks, String label) =>
-    _blockText(blocks.firstWhere(
-      (block) =>
-          block['type'] == 'section' &&
-          _blockText(block).startsWith(label),
-    ));
+String _section(List<Map<String, dynamic>> blocks, String label) => _blockText(
+  blocks.firstWhere(
+    (block) =>
+        block['type'] == 'section' && _blockText(block).startsWith(label),
+  ),
+);
 
 void main() {
   final formatter = SlackPayloadFormatter();
@@ -32,11 +32,13 @@ void main() {
       StackTrace.fromString(long),
       {'attribute': long},
     );
-    final blocks = _blocks(formatter.format(
-      error,
-      [LogRecord('ctx', LogLevel.info, long)],
-      {'metadata': long},
-    ));
+    final blocks = _blocks(
+      formatter.format(
+        error,
+        [LogRecord('ctx', LogLevel.info, long)],
+        {'metadata': long},
+      ),
+    );
 
     expect(blocks.length, 8);
     expect(_blockText(blocks.first).length, lessThanOrEqualTo(150));
@@ -55,7 +57,10 @@ void main() {
     expect(_section(blocks, '*Stack Trace:*'), endsWith('```'));
     expect(_section(blocks, '*Stack Trace:*'), contains('...```'));
     expect(_section(blocks, '*Context Logs:*'), endsWith('```'));
-    expect(_section(blocks, '*Context Logs:*'), contains('[Context truncated]'));
+    expect(
+      _section(blocks, '*Context Logs:*'),
+      contains('[Context truncated]'),
+    );
   });
 
   test('retains text that is exactly at the header and section limits', () {
@@ -76,13 +81,14 @@ void main() {
 
   test('does not split a surrogate pair at a truncation boundary', () {
     const prefix = ':rotating_light: Error: ';
-    final source =
-        '${'C' * (150 - prefix.length - 4)}😀${'x' * 100}';
-    final blocks = _blocks(formatter.format(
-      LogRecord(source, LogLevel.error, 'failure'),
-      [],
-      const {},
-    ));
+    final source = '${'C' * (150 - prefix.length - 4)}😀${'x' * 100}';
+    final blocks = _blocks(
+      formatter.format(
+        LogRecord(source, LogLevel.error, 'failure'),
+        [],
+        const {},
+      ),
+    );
     final header = _blockText(blocks.first);
 
     expect(header, endsWith('...'));
@@ -102,11 +108,13 @@ void main() {
         'entry-${index.toString().padLeft(2, '0')} ${'x' * 150}',
       ),
     );
-    final blocks = _blocks(formatter.format(
-      LogRecord('service', LogLevel.error, 'failure'),
-      logs,
-      const {},
-    ));
+    final blocks = _blocks(
+      formatter.format(
+        LogRecord('service', LogLevel.error, 'failure'),
+        logs,
+        const {},
+      ),
+    );
     final context = _section(blocks, '*Context Logs:*');
 
     expect(context.length, lessThanOrEqualTo(3000));
@@ -123,11 +131,11 @@ void main() {
     const omittedMarker = '[Context truncated]\n';
     final error = LogRecord('service', LogLevel.error, 'failure');
     final baseline = _section(
-      _blocks(formatter.format(
-        error,
-        [LogRecord('ctx', LogLevel.info, '')],
-        const {},
-      )),
+      _blocks(
+        formatter.format(error, [
+          LogRecord('ctx', LogLevel.info, ''),
+        ], const {}),
+      ),
       '*Context Logs:*',
     );
     final emptyLineLength = baseline.length - prefix.length - suffix.length;
@@ -135,11 +143,11 @@ void main() {
     final lineLength = available - omittedMarker.length + 1;
     final message = 'x' * (lineLength - emptyLineLength);
     final context = _section(
-      _blocks(formatter.format(
-        error,
-        [LogRecord('ctx', LogLevel.info, message)],
-        const {},
-      )),
+      _blocks(
+        formatter.format(error, [
+          LogRecord('ctx', LogLevel.info, message),
+        ], const {}),
+      ),
       '*Context Logs:*',
     );
 
@@ -153,11 +161,13 @@ void main() {
       LogRecord('ctx', LogLevel.info, 'stale-entry'),
       LogRecord('ctx', LogLevel.critical, 'newest-entry ${'z' * 5000}'),
     ];
-    final blocks = _blocks(formatter.format(
-      LogRecord('ctx', LogLevel.error, 'failure'),
-      logs,
-      const {},
-    ));
+    final blocks = _blocks(
+      formatter.format(
+        LogRecord('ctx', LogLevel.error, 'failure'),
+        logs,
+        const {},
+      ),
+    );
     final context = _section(blocks, '*Context Logs:*');
 
     expect(context, contains('[Context truncated]'));
@@ -173,11 +183,13 @@ void main() {
       LogRecord('ctx', LogLevel.debug, 'first'),
       LogRecord('ctx', LogLevel.info, 'second'),
     ];
-    final blocks = _blocks(formatter.format(
-      LogRecord('ctx', LogLevel.error, 'failure'),
-      logs,
-      const {},
-    ));
+    final blocks = _blocks(
+      formatter.format(
+        LogRecord('ctx', LogLevel.error, 'failure'),
+        logs,
+        const {},
+      ),
+    );
     final context = _section(blocks, '*Context Logs:*');
 
     expect(context, isNot(contains('[Context truncated]')));

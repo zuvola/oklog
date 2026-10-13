@@ -12,17 +12,11 @@ void main() {
     });
 
     test('rejects zero capacity at construction', () {
-      expect(
-        () => ContextBufferProcessor(0),
-        throwsA(isA<ArgumentError>()),
-      );
+      expect(() => ContextBufferProcessor(0), throwsA(isA<ArgumentError>()));
     });
 
     test('rejects negative capacity at construction', () {
-      expect(
-        () => ContextBufferProcessor(-1),
-        throwsA(isA<ArgumentError>()),
-      );
+      expect(() => ContextBufferProcessor(-1), throwsA(isA<ArgumentError>()));
     });
 
     test('empty buffer returns empty list', () {

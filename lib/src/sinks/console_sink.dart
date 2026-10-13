@@ -28,8 +28,7 @@ class ConsoleSink extends LogSink {
   // Respect explicitly provided formatters, including ConsoleFormatter
   // subclasses. Only the default formatter omits details that developer.log
   // receives through its dedicated parameters.
-  late final LogFormatter<String> _devLogFormatter =
-      _usesDefaultFormatter
+  late final LogFormatter<String> _devLogFormatter = _usesDefaultFormatter
       ? ConsoleFormatter(forDeveloperLog: true)
       : formatter;
 

@@ -110,10 +110,7 @@ class SlackPayloadFormatter implements ErrorFormatter {
     if (contextLogs.isNotEmpty) {
       blocks.add({
         'type': 'section',
-        'text': {
-          'type': 'mrkdwn',
-          'text': _contextText(contextLogs),
-        },
+        'text': {'type': 'mrkdwn', 'text': _contextText(contextLogs)},
       });
     }
 
