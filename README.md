@@ -57,7 +57,7 @@ void main() {
     throw Exception('Something went wrong!');
   } catch (e, st) {
     log.error('main', 'An error occurred.', error: e, stackTrace: st);
-    log.critical('main', 'An unrecoverable error occurred.', error: e, stackTrace: st);
+    // Use log.critical(...) instead for unrecoverable failures.
   }
 }
 ```
@@ -81,6 +81,9 @@ All log methods accept an optional `attrs` map for structured key-value metadata
 ```dart
 log.debug(this, 'User action', attrs: {'userId': 123, 'action': 'login'});
 ```
+
+Attribute maps are held by reference for low logging overhead. Avoid mutating
+attribute collections after passing them to the logger.
 
 ### PII (Personally Identifiable Information)
 
@@ -163,6 +166,8 @@ string. Replace the default `ConsoleFormatter` to change how entries are rendere
 without touching sink behaviour:
 
 ```dart
+import 'dart:convert';
+
 class JsonFormatter extends LogFormatter<String> {
   @override
   String format(LogEntry entry) {
@@ -192,6 +197,8 @@ formatter, `ConsoleSink` automatically uses a developer-log-specific
 Implement `LogProcessor` and return `false` to drop an entry from the pipeline:
 
 ```dart
+import 'dart:math';
+
 class SamplingProcessor implements LogProcessor {
   @override
   bool process(LogEntry entry) => Random().nextDouble() > 0.9; // keep 10%
