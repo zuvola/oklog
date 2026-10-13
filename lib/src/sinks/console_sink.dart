@@ -19,17 +19,19 @@ import 'console_formatter.dart';
 class ConsoleSink extends LogSink {
   final LogFormatter<String> formatter;
   final bool useDeveloperLog;
-  final LogFormatter<String>? _providedFormatter;
+  final bool _usesDefaultFormatter;
 
   ConsoleSink({LogFormatter<String>? formatter, this.useDeveloperLog = false})
     : formatter = formatter ?? ConsoleFormatter(),
-      _providedFormatter = formatter;
+      _usesDefaultFormatter = formatter == null;
 
   // Respect explicitly provided formatters, including ConsoleFormatter
   // subclasses. Only the default formatter omits details that developer.log
   // receives through its dedicated parameters.
   late final LogFormatter<String> _devLogFormatter =
-      _providedFormatter ?? ConsoleFormatter(forDeveloperLog: true);
+      _usesDefaultFormatter
+      ? ConsoleFormatter(forDeveloperLog: true)
+      : formatter;
 
   @override
   void emit(LogEntry entry) {
