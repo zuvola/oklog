@@ -46,7 +46,11 @@ Object? _maskValue(Object? value, String mask, Set<Object> ancestors) {
     try {
       return {
         for (final entry in value.entries)
-          entry.key: _maskValue(entry.value, mask, ancestors),
+          _maskValue(entry.key, mask, ancestors): _maskValue(
+            entry.value,
+            mask,
+            ancestors,
+          ),
       };
     } finally {
       ancestors.remove(value);
@@ -76,7 +80,11 @@ bool _containsPii(Object? value, Set<Object> ancestors) {
   if (value is Map) {
     if (!ancestors.add(value)) return false;
     try {
-      return value.values.any((item) => _containsPii(item, ancestors));
+      return value.entries.any(
+        (entry) =>
+            _containsPii(entry.key, ancestors) ||
+            _containsPii(entry.value, ancestors),
+      );
     } finally {
       ancestors.remove(value);
     }
