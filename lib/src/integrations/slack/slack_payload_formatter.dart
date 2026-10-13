@@ -21,7 +21,7 @@ class SlackPayloadFormatter implements ErrorFormatter {
   static const _maxHeaderLength = 150;
   static const _maxSectionLength = 3000;
   static const _maxContextLength = 2000;
-  static const _omittedMarker = '[Context truncated]\\n';
+  static const _omittedMarker = '[Context truncated]\n';
 
   @override
   Map<String, dynamic> format(
@@ -116,6 +116,7 @@ class SlackPayloadFormatter implements ErrorFormatter {
         },
       });
     }
+
     // Timestamp
     blocks.add({
       'type': 'context',
@@ -199,6 +200,7 @@ class SlackPayloadFormatter implements ErrorFormatter {
     }
     return '${text.substring(0, end)}$marker';
   }
+
   /// Emoji icons corresponding to each [LogLevel].
   static const _icons = ['🐾', '🛠️', '💬', '🔔', '⚠️', '❌', '🚨'];
 }
